@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SubstituiJá - Solução Ágil para Substituição Emergencial</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            cyan: '#00b4d8',
+                            blue: '#0077b6',
+                            darkBlue: '#03045e',
+                            lightBg: '#f8f9fa',
+                            accent: '#90e0ef'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Estilo do Balão de Fala do "QUEM SOMOS" conforme o Rascunho */
+        .speech-bubble {
+            position: relative;
+            background: #ffffff;
+            border: 3px solid #0077b6;
+            border-radius: 40px;
+            display: inline-block;
+            padding: 18px 45px;
+            box-shadow: 0 10px 25px -5px rgba(0, 119, 182, 0.15);
+        }
+        
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -22px;
+            right: 25%;
+            border-width: 22px 18px 0 0;
+            border-style: solid;
+            border-color: #0077b6 transparent;
+            display: block;
+            width: 0;
+        }
+
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -16px;
+            right: 26.5%;
+            border-width: 18px 14px 0 0;
+            border-style: solid;
+            border-color: #ffffff transparent;
+            display: block;
+            width: 0;
+            z-index: 1;
+        }
+
+        /* Ocultar barra de rolagem no carrossel mantendo a funcionalidade */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="bg-brand-lightBg text-slate-800 font-sans antialiased min-h-screen flex flex-col justify-between">
+
+    <!-- CONTÊINER DE TOAST NOTIFICAÇÃO -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3"></div>
+
+    <!-- 1. TOPO / HEADER -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- LOGO / NOME -->
+            <a href="#" class="flex items-center gap-3 text-brand-darkBlue font-bold text-2xl tracking-tight group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-blue to-brand-cyan flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+                    <i class="fa-solid fa-bolt text-xl"></i>
+                </div>
+                <span>Substitui<span class="text-brand-cyan">Já</span></span>
+            </a>
+
+            <!-- BOTÕES DE AUTENTICAÇÃO (ENTRAR E CADASTRAR-SE) -->
+            <div class="flex items-center gap-3 sm:gap-4">
+                <button onclick="openAuthModal('login')" class="px-5 py-2.5 rounded-full text-brand-blue border-2 border-brand-blue/30 font-semibold hover:bg-brand-blue hover:text-white transition-all text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-brand-blue/50">
+                    <i class="fa-regular fa-user mr-1.5"></i> ENTRAR
+                </button>
+                <button onclick="openAuthModal('register')" class="px-5 py-2.5 rounded-full bg-gradient-to-r from-brand-blue to-brand-cyan text-white font-semibold hover:shadow-lg hover:opacity-95 transition-all text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-brand-cyan/50">
+                    CADASTRAR-SE
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <!-- 2. BARRA DE BUSCA E MAIS VISTOS -->
+        <section class="max-w-5xl mx-auto px-4 pt-10 pb-8">
+            <div class="bg-white p-4 sm:p-6 rounded-3xl shadow-lg border border-slate-100">
+                <div class="relative flex items-center">
+                    <i class="fa-solid fa-magnifying-glass absolute left-5 text-brand-blue text-xl"></i>
+                    <input type="text" id="searchInput" oninput="handleSearch()" placeholder="BUSCAR (Ex: Garçom em São Paulo, Enfermeiro noturno...)" class="w-full pl-14 pr-28 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-cyan focus:bg-white text-base sm:text-lg transition-all">
+                    <button onclick="performSearch()" class="absolute right-2 px-6 py-3 bg-brand-blue text-white font-semibold rounded-xl hover:bg-brand-darkBlue transition-colors text-sm sm:text-base">
+                        BUSCAR
+                    </button>
+                </div>
+                
+                <!-- POPULARES / MAIS VISTOS -->
+                <div class="mt-4 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                    <span class="font-semibold text-brand-darkBlue uppercase tracking-wider text-xs">MAIS VISTOS:</span>
+                    <button onclick="fillSearch('Garçom')" class="px-3 py-1 bg-slate-100 hover:bg-brand-cyan/20 hover:text-brand-blue rounded-full transition-colors font-medium text-xs sm:text-sm">
+                        Garçom
+                    </button>
+                    <button onclick="fillSearch('Enfermeiro')" class="px-3 py-1 bg-slate-100 hover:bg-brand-cyan/20 hover:text-brand-blue rounded-full transition-colors font-medium text-xs sm:text-sm">
+                        Enfermeiro
+                    </button>
+                    <button onclick="fillSearch('Cantor')" class="px-3 py-1 bg-slate-100 hover:bg-brand-cyan/20 hover:text-brand-blue rounded-full transition-colors font-medium text-xs sm:text-sm">
+                        Cantor
+                    </button>
+                    <button onclick="fillSearch('Cozinheiro')" class="px-3 py-1 bg-slate-100 hover:bg-brand-cyan/20 hover:text-brand-blue rounded-full transition-colors font-medium text-xs sm:text-sm">
+                        Cozinheiro
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. CATEGORIAS EM ÍCONES (GRID) -->
+        <section class="max-w-6xl mx-auto px-4 py-6">
+            <h2 class="text-xs uppercase tracking-widest text-center text-slate-400 font-bold mb-6">Categorias Principais</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+                
+                <!-- EVENTOS -->
+                <div onclick="filterCategory('Eventos')" class="category-card cursor-pointer bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-brand-cyan transition-all flex flex-col items-center text-center group">
+                    <div class="w-12 h-12 rounded-2xl bg-cyan-50 text-brand-cyan flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-glass-cheers"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 uppercase">EVENTOS</span>
+                </div>
+
+                <!-- CULINÁRIA -->
+                <div onclick="filterCategory('Culinária')" class="category-card cursor-pointer bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-brand-cyan transition-all flex flex-col items-center text-center group">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-50 text-brand-blue flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-utensils"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 uppercase">CULINÁRIA</span>
+                </div>
+
+                <!-- TECNOLOGIA -->
+                <div onclick="filterCategory('Tecnologia')" class="category-card cursor-pointer bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-brand-cyan transition-all flex flex-col items-center text-center group">
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-code"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 uppercase">TECNOLOGIA</span>
+                </div>
+
+                <!-- DESIGN -->
+                <div onclick="filterCategory('Design')" class="category-card cursor-pointer bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-brand-cyan transition-all flex flex-col items-center text-center group">
+                    <div class="w-12 h-12 rounded-2xl bg-pink-50 text-pink-500 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-palette"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 uppercase">DESIGN</span>
+                </div>
+
+                <!-- SAÚDE -->
+                <div onclick="filterCategory('Saúde')" class="category-card cursor-pointer bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-brand-cyan transition-all flex flex-col items-center text-center group">
+                    <div class="w-12 h-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-heart-pulse"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 uppercase">SAÚDE</span>
+                </div>
+
+                <!-- ADMIN -->
+                <div onclick="filterCategory('Admin')" class="category-card cursor-pointer bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-brand-cyan transition-all flex flex-col items-center text-center group">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-briefcase"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 uppercase">ADMIN</span>
+                </div>
+
+                <!-- SETOR DE BELEZA -->
+                <div onclick="filterCategory('Setor de Beleza')" class="category-card cursor-pointer bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-brand-cyan transition-all flex flex-col items-center text-center group">
+                    <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-scissors"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 uppercase">SETOR DE BELEZA</span>
+                </div>
+
+                <!-- OUTRO -->
+                <div onclick="filterCategory('Outro')" class="category-card cursor-pointer bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-brand-cyan transition-all flex flex-col items-center text-center group">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-border-all"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 uppercase">OUTRO</span>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- RESULTADOS DE BUSCA / FILTRO (OCULTO POR PADRÃO) -->
+        <section id="searchResultsSection" class="hidden max-w-5xl mx-auto px-4 py-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-800 text-lg" id="searchResultTitle">Resultados Encontrados</h3>
+                <button onclick="clearSearchFilter()" class="text-xs font-semibold text-brand-blue hover:underline">
+                    <i class="fa-solid fa-xmark mr-1"></i> Limpar Filtro
+                </button>
+            </div>
+            <div id="searchResultsList" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Inserido dinamicamente via JS -->
+            </div>
+        </section>
+
+        <!-- 4. SEÇÃO "QUEM SOMOS" COM BALÃO DE FALA -->
+        <section class="max-w-4xl mx-auto px-4 py-14 text-center">
+            <!-- TITULO EM BALÃO DE FALA -->
+            <div class="mb-8">
+                <div class="speech-bubble">
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-brand-darkBlue tracking-wide">
+                        QUEM SOMOS?
+                    </h2>
+                </div>
+            </div>
+
+            <!-- TEXTO CONFORME RASCUNHO E PDF -->
+            <p class="text-lg sm:text-2xl text-slate-700 font-medium leading-relaxed max-w-3xl mx-auto">
+                A <span class="font-bold text-brand-blue">SubstituiJá</span> proporciona um ambiente seguro de contratação emergencial para ambos os lados.
+            </p>
+
+            <!-- DESTAQUES ADICIONAIS DA PROPOSTA -->
+            <div class="grid sm:grid-cols-3 gap-6 mt-12 text-left">
+                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-start gap-4">
+                    <div class="text-brand-cyan text-2xl mt-1"><i class="fa-solid fa-clock"></i></div>
+                    <div>
+                        <h4 class="font-bold text-brand-darkBlue">Resposta Imediata</h4>
+                        <p class="text-xs text-slate-500 mt-1">Conecte-se com profissionais qualificados e disponíveis em poucos minutos após o registro da falta.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-start gap-4">
+                    <div class="text-brand-blue text-2xl mt-1"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div>
+                        <h4 class="font-bold text-brand-darkBlue">Segurança Garantida</h4>
+                        <p class="text-xs text-slate-500 mt-1">Histórico verificado, avaliações mútuas e garantia de pagamento sem riscos para empresas e substitutos.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-start gap-4">
+                    <div class="text-indigo-600 text-2xl mt-1"><i class="fa-solid fa-chart-line"></i></div>
+                    <div>
+                        <h4 class="font-bold text-brand-darkBlue">Sem Paralisação</h4>
+                        <p class="text-xs text-slate-500 mt-1">Mantenha a produtividade alta e evite a sobrecarga das equipes diante de faltas de última hora.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. SEÇÃO "COMO USAR NOSSOS SERVIÇOS" (CARROSSEL/CARDS) -->
+        <section class="max-w-6xl mx-auto px-4 py-12">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-brand-darkBlue uppercase">
+                        COMO USAR NOSSOS SERVIÇOS
+                    </h2>
+                    <p class="text-slate-500 text-sm mt-1">Navegue pelas etapas e entenda a facilidade de contratação</p>
+                </div>
+                
+                <!-- BOTÕES DE NAVEGAÇÃO LATERAL (< e >) -->
+                <div class="flex items-center gap-3">
+                    <button onclick="scrollCarousel(-1)" class="w-12 h-12 rounded-full border-2 border-brand-blue/30 text-brand-blue hover:bg-brand-blue hover:text-white transition-all flex items-center justify-center font-bold text-lg shadow-sm">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button onclick="scrollCarousel(1)" class="w-12 h-12 rounded-full border-2 border-brand-blue/30 text-brand-blue hover:bg-brand-blue hover:text-white transition-all flex items-center justify-center font-bold text-lg shadow-sm">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- CONTAINER DO CARROSSEL -->
+            <div id="carouselContainer" class="flex gap-6 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-6">
+                
+                <!-- CARD 1: PARA EMPRESAS (ÍCONE LAPTOP) -->
+                <div class="snap-start flex-shrink-0 w-full sm:w-[320px] md:w-[360px] bg-white rounded-3xl p-6 border border-slate-100 shadow-md flex flex-col justify-between hover:border-brand-cyan transition-all">
+                    <div>
+                        <div class="w-full h-44 rounded-2xl bg-slate-50 flex flex-col items-center justify-center text-brand-blue mb-6 border border-slate-100 relative overflow-hidden group">
+                            <i class="fa-solid fa-laptop text-6xl group-hover:scale-110 transition-transform duration-300"></i>
+                            <span class="absolute top-3 left-3 bg-brand-cyan/20 text-brand-blue font-bold text-xs px-3 py-1 rounded-full">Para Empresas</span>
+                        </div>
+                        <h3 class="font-bold text-xl text-brand-darkBlue mb-2">Para Empresas</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed mb-6">
+                            Sua equipe teve uma falta imprevista? Registre a vaga emergencial indicando a função, horário e local para acionar imediatamente a nossa rede.
+                        </p>
+                    </div>
+                    <button onclick="openDetailModal('empresas')" class="w-full py-3 bg-slate-100 hover:bg-brand-blue hover:text-white font-bold text-brand-blue rounded-xl transition-colors text-sm uppercase tracking-wider">
+                        LEIA MAIS
+                    </button>
+                </div>
+
+                <!-- CARD 2: PARA SUBSTITUTOS (ÍCONE MICROFONE/TRABALHADOR) -->
+                <div class="snap-start flex-shrink-0 w-full sm:w-[320px] md:w-[360px] bg-white rounded-3xl p-6 border border-slate-100 shadow-md flex flex-col justify-between hover:border-brand-cyan transition-all">
+                    <div>
+                        <div class="w-full h-44 rounded-2xl bg-slate-50 flex flex-col items-center justify-center text-brand-cyan mb-6 border border-slate-100 relative overflow-hidden group">
+                            <i class="fa-solid fa-microphone-lines text-6xl group-hover:scale-110 transition-transform duration-300"></i>
+                            <span class="absolute top-3 left-3 bg-brand-cyan/20 text-brand-blue font-bold text-xs px-3 py-1 rounded-full">Para Profissionais</span>
+                        </div>
+                        <h3 class="font-bold text-xl text-brand-darkBlue mb-2">Para Trabalhadores</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed mb-6">
+                            Cadastre suas habilidades, área de atuação e disponibilidade. Receba alertas de bicos urgentes e garanta renda extra com flexibilidade total.
+                        </p>
+                    </div>
+                    <button onclick="openDetailModal('substitutos')" class="w-full py-3 bg-slate-100 hover:bg-brand-blue hover:text-white font-bold text-brand-blue rounded-xl transition-colors text-sm uppercase tracking-wider">
+                        LEIA MAIS
+                    </button>
+                </div>
+
+                <!-- CARD 3: GEOLOCALIZAÇÃO E MATCHING (ÍCONE CARRO) -->
+                <div class="snap-start flex-shrink-0 w-full sm:w-[320px] md:w-[360px] bg-white rounded-3xl p-6 border border-slate-100 shadow-md flex flex-col justify-between hover:border-brand-cyan transition-all">
+                    <div>
+                        <div class="w-full h-44 rounded-2xl bg-slate-50 flex flex-col items-center justify-center text-indigo-500 mb-6 border border-slate-100 relative overflow-hidden group">
+                            <i class="fa-solid fa-car-side text-6xl group-hover:scale-110 transition-transform duration-300"></i>
+                            <span class="absolute top-3 left-3 bg-indigo-100 text-indigo-700 font-bold text-xs px-3 py-1 rounded-full">Algoritmo Inteligente</span>
+                        </div>
+                        <h3 class="font-bold text-xl text-brand-darkBlue mb-2">Matching por Proximidade</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed mb-6">
+                            O sistema filtra os melhores candidatos por localização, experiência e avaliação de histórico. A confirmação de presença é feita em segundos no app.
+                        </p>
+                    </div>
+                    <button onclick="openDetailModal('matching')" class="w-full py-3 bg-slate-100 hover:bg-brand-blue hover:text-white font-bold text-brand-blue rounded-xl transition-colors text-sm uppercase tracking-wider">
+                        SAIBA MAIS
+                    </button>
+                </div>
+
+                <!-- CARD 4: CRITÉRIOS DE QUALIDADE -->
+                <div class="snap-start flex-shrink-0 w-full sm:w-[320px] md:w-[360px] bg-white rounded-3xl p-6 border border-slate-100 shadow-md flex flex-col justify-between hover:border-brand-cyan transition-all">
+                    <div>
+                        <div class="w-full h-44 rounded-2xl bg-slate-50 flex flex-col items-center justify-center text-amber-500 mb-6 border border-slate-100 relative overflow-hidden group">
+                            <i class="fa-solid fa-star-half-stroke text-6xl group-hover:scale-110 transition-transform duration-300"></i>
+                            <span class="absolute top-3 left-3 bg-amber-100 text-amber-800 font-bold text-xs px-3 py-1 rounded-full">Confiança</span>
+                        </div>
+                        <h3 class="font-bold text-xl text-brand-darkBlue mb-2">Avaliações e Selos</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed mb-6">
+                            Após cada atendimento, empresas e prestadores avaliam o serviço. Isso constrói reputação e assegura alto nível de profissionalismo nas contratações.
+                        </p>
+                    </div>
+                    <button onclick="openDetailModal('qualidade')" class="w-full py-3 bg-slate-100 hover:bg-brand-blue hover:text-white font-bold text-brand-blue rounded-xl transition-colors text-sm uppercase tracking-wider">
+                        SAIBA MAIS
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SEÇÃO INTERATIVA EXTRA PARA APRESENTAÇÃO DO PROJETO ESCOLAR -->
+        <section class="max-w-6xl mx-auto px-4 py-10 my-8 bg-gradient-to-r from-brand-darkBlue to-brand-blue rounded-3xl text-white shadow-xl">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-8 p-4 sm:p-8">
+                <div class="space-y-3 max-w-xl">
+                    <span class="inline-block px-3 py-1 bg-brand-cyan/20 text-brand-cyan font-semibold text-xs rounded-full uppercase tracking-wider">
+                        Demonstração Prática
+                    </span>
+                    <h3 class="text-2xl sm:text-3xl font-bold leading-tight">
+                        Precisa solicitar um substituto emergencial agora?
+                    </h3>
+                    <p class="text-slate-200 text-sm leading-relaxed">
+                        Simule a publicação de uma falta de última hora e teste como nosso sistema seleciona o substituto ideal em instantes.
+                    </p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                    <button onclick="openEmergencyModal()" class="px-6 py-4 bg-brand-cyan text-slate-900 font-bold rounded-2xl hover:bg-white transition-all text-center shadow-lg hover:scale-105">
+                        <i class="fa-solid fa-bullhorn mr-2"></i> Solicitar Substituto
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-slate-400 py-12 border-t border-slate-800 text-sm">
+        <div class="max-w-7xl mx-auto px-4 grid sm:grid-cols-2 md:grid-cols-4 gap-8">
+            <div>
+                <div class="flex items-center gap-2 text-white font-bold text-xl mb-4">
+                    <i class="fa-solid fa-bolt text-brand-cyan"></i> SubstituiJá
+                </div>
+                <p class="text-xs text-slate-400 leading-relaxed mb-4">
+                    Projeto escolar desenvolvido para solução ágil e inteligente de substituição emergencial de funcionários faltantes.
+                </p>
+                <span class="text-xs text-slate-500">© 2026 SubstituiJá - Todos os direitos reservados.</span>
+            </div>
+
+            <div>
+                <h5 class="text-white font-semibold mb-3">Solução</h5>
+                <ul class="space-y-2 text-xs">
+                    <li><a href="#" class="hover:text-brand-cyan transition-colors">Para Empresas</a></li>
+                    <li><a href="#" class="hover:text-brand-cyan transition-colors">Para Profissionais</a></li>
+                    <li><a href="#" class="hover:text-brand-cyan transition-colors">Segurança e Confiabilidade</a></li>
+                    <li><a href="#" class="hover:text-brand-cyan transition-colors">Modelo de Comissão</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h5 class="text-white font-semibold mb-3">Categorias</h5>
+                <ul class="space-y-2 text-xs">
+                    <li><a href="#" onclick="filterCategory('Eventos')" class="hover:text-brand-cyan transition-colors">Eventos & Festas</a></li>
+                    <li><a href="#" onclick="filterCategory('Culinária')" class="hover:text-brand-cyan transition-colors">Gastronomia & Restaurantes</a></li>
+                    <li><a href="#" onclick="filterCategory('Saúde')" class="hover:text-brand-cyan transition-colors">Saúde & Cuidados</a></li>
+                    <li><a href="#" onclick="filterCategory('Tecnologia')" class="hover:text-brand-cyan transition-colors">TI & Suporte</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h5 class="text-white font-semibold mb-3">Contato do Projeto</h5>
+                <ul class="space-y-2 text-xs">
+                    <li><i class="fa-regular fa-envelope mr-2 text-brand-cyan"></i> contato@substituija.com.br</li>
+                    <li><i class="fa-solid fa-phone mr-2 text-brand-cyan"></i> (11) 9999-0000</li>
+                    <li><i class="fa-solid fa-location-dot mr-2 text-brand-cyan"></i> São Paulo - SP</li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL DE AUTENTICAÇÃO (ENTRAR / CADASTRAR-SE) -->
+    <div id="authModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
+            <button onclick="closeModal('authModal')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- ABAS -->
+            <div class="flex border-b border-slate-100 mb-6">
+                <button id="tabLogin" onclick="switchAuthTab('login')" class="flex-1 py-3 font-bold text-center border-b-2 border-brand-blue text-brand-blue">
+                    Entrar
+                </button>
+                <button id="tabRegister" onclick="switchAuthTab('register')" class="flex-1 py-3 font-bold text-center border-b-2 border-transparent text-slate-400 hover:text-slate-600">
+                    Cadastrar-se
+                </button>
+            </div>
+
+            <!-- FORMULÁRIO LOGIN -->
+            <form id="formLogin" onsubmit="submitAuth(event, 'login')" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">E-mail</label>
+                    <input type="email" required placeholder="seu@email.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Senha</label>
+                    <input type="password" required placeholder="••••••••" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-brand-blue text-white font-bold rounded-xl hover:bg-brand-darkBlue transition-colors shadow-md">
+                    ACESSAR CONTA
+                </button>
+            </form>
+
+            <!-- FORMULÁRIO CADASTRO -->
+            <form id="formRegister" onsubmit="submitAuth(event, 'register')" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Tipo de Perfil</label>
+                    <select class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                        <option value="empresa">Sou Empresa (Busco Substitutos)</option>
+                        <option value="substituto">Sou Profissional (Quero Trabalhar)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Nome Completo / Razão Social</label>
+                    <input type="text" required placeholder="Digite o nome" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">E-mail</label>
+                    <input type="email" required placeholder="seu@email.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Senha</label>
+                    <input type="password" required placeholder="Crie uma senha" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-brand-cyan text-slate-900 font-bold rounded-xl hover:bg-brand-blue hover:text-white transition-colors shadow-md">
+                    CRIAR MINHA CONTA
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE DETALHES "LEIA MAIS / SAIBA MAIS" -->
+    <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative">
+            <button onclick="closeModal('detailModal')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div id="detailModalContent">
+                <!-- Conteúdo Dinâmico via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SIMULADOR DE VAGA EMERGENCIAL -->
+    <div id="emergencyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative">
+            <button onclick="closeModal('emergencyModal')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-2xl font-bold text-brand-darkBlue mb-2">Registrar Falta Emergencial</h3>
+            <p class="text-slate-500 text-xs mb-6">Informe os detalhes para acionarmos imediatamente substitutos próximos.</p>
+
+            <form onsubmit="handleEmergencySubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Função / Cargo</label>
+                    <input type="text" id="emCargo" required placeholder="Ex: Garçom, Cozinheiro, Técnico de Enfermagem" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Horário de Início</label>
+                        <input type="time" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Valor/Hora (R$)</label>
+                        <input type="number" required placeholder="Ex: 35" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Endereço / Localidade</label>
+                    <input type="text" required placeholder="Rua, Bairro e Cidade" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors shadow-lg flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> ENVIAR NOTIFICAÇÃO URGENTE
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // MOCK DATA DE VAGAS E PROFISSIONAIS
+        const MOCK_DATA = [
+            { id: 1, cargo: "Garçom", categoria: "Culinária", local: "Centro, SP", valor: "R$ 30/h", urgencia: "Urgente", rating: "4.9", disponivel: true },
+            { id: 2, cargo: "Enfermeiro Noturno", categoria: "Saúde", local: "Pinheiros, SP", valor: "R$ 55/h", urgencia: "Urgente", rating: "5.0", disponivel: true },
+            { id: 3, cargo: "Cantor / Músico", categoria: "Eventos", local: "Vila Madalena, SP", valor: "R$ 120/h", urgencia: "Hoje", rating: "4.8", disponivel: true },
+            { id: 4, cargo: "Cozinheiro Chefe", categoria: "Culinária", local: "Moema, SP", valor: "R$ 45/h", urgencia: "Imediato", rating: "4.9", disponivel: true },
+            { id: 5, cargo: "Suporte de TI", categoria: "Tecnologia", local: "Paulista, SP", valor: "R$ 40/h", urgencia: "Hoje", rating: "4.7", disponivel: true },
+            { id: 6, cargo: "Cabeleireira / Ajudante", categoria: "Setor de Beleza", local: "Jardins, SP", valor: "R$ 35/h", urgencia: "Urgente", rating: "4.9", disponivel: true },
+            { id: 7, cargo: "Designer Gráfico Freela", categoria: "Design", local: "Remoto", valor: "R$ 50/h", urgencia: "Hoje", rating: "4.8", disponivel: true },
+            { id: 8, cargo: "Auxiliar Administrativo", categoria: "Admin", local: "Santana, SP", valor: "R$ 28/h", urgencia: "Amanhã", rating: "4.6", disponivel: true },
+        ];
+
+        // ROLAGEM DO CARROSSEL
+        function scrollCarousel(direction) {
+            const container = document.getElementById('carouselContainer');
+            const scrollAmount = 340;
+            container.scrollBy({
+                left: direction * scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+
+        // AUTO-PREENCHER CAMPO DE BUSCA
+        function fillSearch(term) {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.value = term;
+            performSearch();
+        }
+
+        // EXECUTAR BUSCA
+        function performSearch() {
+            const term = document.getElementById('searchInput').value.trim().toLowerCase();
+            if (!term) return;
+
+            const filtered = MOCK_DATA.filter(item => 
+                item.cargo.toLowerCase().includes(term) || 
+                item.categoria.toLowerCase().includes(term) ||
+                item.local.toLowerCase().includes(term)
+            );
+
+            renderSearchResults(filtered, `Resultados para "${term}"`);
+        }
+
+        function handleSearch() {
+            const term = document.getElementById('searchInput').value.trim();
+            if (term.length > 2) {
+                performSearch();
+            } else if (term.length === 0) {
+                clearSearchFilter();
+            }
+        }
+
+        // FILTRAR POR CATEGORIA CLICADA
+        function filterCategory(categoryName) {
+            const filtered = MOCK_DATA.filter(item => 
+                item.categoria.toLowerCase() === categoryName.toLowerCase() || categoryName === 'Outro'
+            );
+            renderSearchResults(filtered, `Categoria: ${categoryName}`);
+            showToast(`Filtro aplicado para a categoria ${categoryName}`);
+        }
+
+        // RENDERIZAR RESULTADOS
+        function renderSearchResults(items, title) {
+            const section = document.getElementById('searchResultsSection');
+            const titleElem = document.getElementById('searchResultTitle');
+            const listElem = document.getElementById('searchResultsList');
+
+            titleElem.textContent = title;
+            listElem.innerHTML = '';
+
+            if (items.length === 0) {
+                listElem.innerHTML = `
+                    <div class="col-span-full bg-white p-8 rounded-2xl text-center border border-slate-100">
+                        <i class="fa-solid fa-magnifying-glass text-4xl text-slate-300 mb-3"></i>
+                        <p class="font-bold text-slate-700">Nenhum profissional ou vaga encontrada no momento.</p>
+                        <p class="text-xs text-slate-400 mt-1">Tente buscar por "Garçom", "Enfermeiro" ou "Cozinheiro".</p>
+                    </div>
+                `;
+            } else {
+                items.forEach(item => {
+                    listElem.innerHTML += `
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-bold px-2.5 py-1 bg-red-50 text-red-600 rounded-full">
+                                        <i class="fa-solid fa-clock mr-1"></i> ${item.urgencia}
+                                    </span>
+                                    <span class="text-xs font-bold text-amber-500">
+                                        <i class="fa-solid fa-star"></i> ${item.rating}
+                                    </span>
+                                </div>
+                                <h4 class="font-bold text-slate-800 text-lg">${item.cargo}</h4>
+                                <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-location-dot mr-1"></i> ${item.local}</p>
+                                <p class="text-sm font-semibold text-brand-blue mt-2">${item.valor}</p>
+                            </div>
+                            <button onclick="requestCandidate('${item.cargo}')" class="mt-4 w-full py-2 bg-brand-cyan text-slate-900 font-bold rounded-xl hover:bg-brand-blue hover:text-white transition-colors text-xs uppercase">
+                                Solicitar Substituto
+                            </button>
+                        </div>
+                    `;
+                });
+            }
+
+            section.classList.remove('hidden');
+            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function clearSearchFilter() {
+            document.getElementById('searchResultsSection').classList.add('hidden');
+            document.getElementById('searchInput').value = '';
+        }
+
+        // GERENCIADOR DE MODAIS
+        function openAuthModal(mode) {
+            switchAuthTab(mode);
+            document.getElementById('authModal').classList.remove('hidden');
+        }
+
+        function switchAuthTab(mode) {
+            const tabLogin = document.getElementById('tabLogin');
+            const tabRegister = document.getElementById('tabRegister');
+            const formLogin = document.getElementById('formLogin');
+            const formRegister = document.getElementById('formRegister');
+
+            if (mode === 'login') {
+                tabLogin.className = "flex-1 py-3 font-bold text-center border-b-2 border-brand-blue text-brand-blue";
+                tabRegister.className = "flex-1 py-3 font-bold text-center border-b-2 border-transparent text-slate-400 hover:text-slate-600";
+                formLogin.classList.remove('hidden');
+                formRegister.classList.add('hidden');
+            } else {
+                tabRegister.className = "flex-1 py-3 font-bold text-center border-b-2 border-brand-blue text-brand-blue";
+                tabLogin.className = "flex-1 py-3 font-bold text-center border-b-2 border-transparent text-slate-400 hover:text-slate-600";
+                formRegister.classList.remove('hidden');
+                formLogin.classList.add('hidden');
+            }
+        }
+
+        function openDetailModal(type) {
+            const modalContent = document.getElementById('detailModalContent');
+            
+            if (type === 'empresas') {
+                modalContent.innerHTML = `
+                    <div class="text-brand-blue text-4xl mb-3"><i class="fa-solid fa-laptop"></i></div>
+                    <h3 class="text-2xl font-bold text-brand-darkBlue mb-3">Para Empresas</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-4">
+                        Quando um funcionário falta sem aviso, a sua empresa enfrenta desorganização imediata. Com a <strong>SubstituiJá</strong>, você resolve isso em minutos:
+                    </p>
+                    <ul class="space-y-2 text-xs text-slate-700 mb-6">
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> Registro rápido da vaga emergencial em 3 passos</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> Filtro por proximidade e perfil verificado</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> Pagamento seguro por diária ou hora realizada</li>
+                    </ul>
+                    <button onclick="closeModal('detailModal'); openEmergencyModal();" class="w-full py-3 bg-brand-blue text-white font-bold rounded-xl hover:bg-brand-darkBlue transition-colors text-sm">
+                        TESTAR AGORA
+                    </button>
+                `;
+            } else if (type === 'substitutos') {
+                modalContent.innerHTML = `
+                    <div class="text-brand-cyan text-4xl mb-3"><i class="fa-solid fa-microphone-lines"></i></div>
+                    <h3 class="text-2xl font-bold text-brand-darkBlue mb-3">Para Profissionais e Substitutos</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-4">
+                        Transforme seu tempo livre em renda extra atuando como substituto temporário em sua área de atuação:
+                    </p>
+                    <ul class="space-y-2 text-xs text-slate-700 mb-6">
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> Receba notificações instantâneas no seu celular</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> Aceite ou recuse vagas com total liberdade</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> Construa uma reputação sólida com avaliações 5 estrelas</li>
+                    </ul>
+                    <button onclick="closeModal('detailModal'); openAuthModal('register');" class="w-full py-3 bg-brand-cyan text-slate-900 font-bold rounded-xl hover:bg-brand-blue hover:text-white transition-colors text-sm">
+                        CADASTRAR MEU PERFIL
+                    </button>
+                `;
+            } else if (type === 'matching') {
+                modalContent.innerHTML = `
+                    <div class="text-indigo-600 text-4xl mb-3"><i class="fa-solid fa-car-side"></i></div>
+                    <h3 class="text-2xl font-bold text-brand-darkBlue mb-3">Matching por Geolocalização</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-4">
+                        Nosso algoritmo analisa distância, tempo de deslocamento, avaliações prévias e qualificações para sugerir os melhores substitutos que chegam mais rápido ao local de trabalho.
+                    </p>
+                    <button onclick="closeModal('detailModal')" class="w-full py-3 bg-slate-100 font-bold text-slate-700 rounded-xl hover:bg-slate-200 transition-colors text-sm">
+                        ENTENDI
+                    </button>
+                `;
+            } else if (type === 'qualidade') {
+                modalContent.innerHTML = `
+                    <div class="text-amber-500 text-4xl mb-3"><i class="fa-solid fa-star"></i></div>
+                    <h3 class="text-2xl font-bold text-brand-darkBlue mb-3">Critérios de Qualidade</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-4">
+                        Para garantir a segurança de ambas as partes, avaliamos:
+                    </p>
+                    <ul class="space-y-2 text-xs text-slate-700 mb-6">
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-shield-check text-brand-blue"></i> Documentação e histórico checados</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-star text-amber-500"></i> Pontuação mínima mantida pelos profissionais</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-thumbs-up text-green-500"></i> Suporte contínuo da nossa plataforma</li>
+                    </ul>
+                    <button onclick="closeModal('detailModal')" class="w-full py-3 bg-slate-100 font-bold text-slate-700 rounded-xl hover:bg-slate-200 transition-colors text-sm">
+                        FECHAR
+                    </button>
+                `;
+            }
+
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function openEmergencyModal() {
+            document.getElementById('emergencyModal').classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // SUBMISSÃO DE FORMULÁRIOS
+        function submitAuth(e, type) {
+            e.preventDefault();
+            closeModal('authModal');
+            showToast(type === 'login' ? 'Login efetuado com sucesso!' : 'Cadastro realizado com sucesso!');
+        }
+
+        function handleEmergencySubmit(e) {
+            e.preventDefault();
+            const cargo = document.getElementById('emCargo').value;
+            closeModal('emergencyModal');
+            showToast(`Solicitação para ${cargo} enviada! 3 substitutos foram notificados.`);
+        }
+
+        function requestCandidate(cargo) {
+            showToast(`Solicitação enviada para o candidato da vaga: ${cargo}`);
+        }
+
+        // SISTEMA DE TOAST NOTIFICATION
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 text-sm font-medium animate-bounce';
+            toast.innerHTML = `
+                <i class="fa-solid fa-circle-check text-brand-cyan text-lg"></i>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
