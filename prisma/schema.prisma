@@ -1,0 +1,88 @@
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+model Empresa {
+  id       Int      @id @default(autoincrement())
+  nome     String
+  cnpj     String   @unique
+  email    String   @unique
+  senha    String
+  telefone String?
+  cidade   String?
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  vagas Vaga[]
+
+  @@map("empresas")
+}
+
+model Profissional {
+  id              Int      @id @default(autoincrement())
+  nome            String
+  cpf             String   @unique
+  email           String   @unique
+  senha           String
+  telefone        String?
+  cidade          String?
+  funcap          String
+  anosExperiencia Int      @default(0) @map("anos_experiencia")
+  notaMedia       Float?   @default(0.0) @map("nota_media")
+  disponivel      Boolean  @default(true)
+  criadoEm        DateTime @default(now()) @map("criado_em")
+
+  candidaturas Candidatura[]
+
+  @@map("profissionais")
+}
+
+model Vaga {
+  id           Int      @id @default(autoincrement())
+  empresaId    Int      @map("empresa_id")
+  empresa      Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  titulo       String
+  descricao    String?
+  dataVaga     DateTime @map("data_vaga")
+  horaInicio   String   @map("hora_inicio")
+  duracaoHoras Int      @map("duracao_horas")
+  valorHora    Float    @map("valor_hora")
+  endereco     String?
+  status       String   @default("aberta")
+  criadoEm     DateTime @default(now()) @map("criado_em")
+
+  candidaturas Candidatura[]
+  avaliacoes   Avaliacao[]
+
+  @@map("vagas")
+}
+
+model Candidatura {
+  id             Int          @id @default(autoincrement())
+  vagaId         Int          @map("vaga_id")
+  vaga           Vaga         @relation(fields: [vagaId], references: [id], onDelete: Cascade)
+  profissionalId Int          @map("profissional_id")
+  profissional   Profissional @relation(fields: [profissionalId], references: [id], onDelete: Cascade)
+  status         String       @default("enviado")
+  dataResposta   DateTime?    @map("data_resposta")
+  criadoEm       DateTime     @default(now()) @map("criado_em")
+
+  @@unique([vagaId, profissionalId])
+  @@map("candidaturas")
+}
+
+model Avaliacao {
+  id            Int      @id @default(autoincrement())
+  vagaId        Int      @map("vaga_id")
+  vaga          Vaga     @relation(fields: [vagaId], references: [id], onDelete: Cascade)
+  avaliadorTipo String   @map("avaliador_tipo")
+  nota          Int
+  comentario    String?
+  criadoEm      DateTime @default(now()) @map("criado_em")
+
+  @@map("avaliacoes")
+}
