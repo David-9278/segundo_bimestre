@@ -30,7 +30,7 @@ model Profissional {
   senha           String
   telefone        String?
   cidade          String?
-  funcap          String
+  funcao          String
   anosExperiencia Int      @default(0) @map("anos_experiencia")
   notaMedia       Float?   @default(0.0) @map("nota_media")
   disponivel      Boolean  @default(true)
