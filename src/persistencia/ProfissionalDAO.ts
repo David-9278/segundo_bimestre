@@ -11,7 +11,7 @@ export class ProfissionalDAO {
         senha: profissional.senha,
         telefone: profissional.telefone,
         cidade: profissional.cidade,
-        funcap: profissional.funcap,
+        funcao: profissional.funcap,
         anosExperiencia: profissional.anosExperiencia,
         notaMedia: profissional.notaMedia,
         disponivel: profissional.disponivel,
