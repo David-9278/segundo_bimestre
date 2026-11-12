@@ -19,7 +19,7 @@ CREATE TABLE "profissionais" (
     "senha" TEXT NOT NULL,
     "telefone" TEXT,
     "cidade" TEXT,
-    "funcap" TEXT NOT NULL,
+    "funcao" TEXT NOT NULL,
     "anos_experiencia" INTEGER NOT NULL DEFAULT 0,
     "nota_media" REAL DEFAULT 0.0,
     "disponivel" BOOLEAN NOT NULL DEFAULT true,
