@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SubstituiJá - Solução Ágil para Substituição Emergencial</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            cyan: '#00b4d8',
+                            blue: '#0077b6',
+                            darkBlue: '#03045e',
+                            lightBg: '#f8f9fa',
+                            accent: '#90e0ef'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        // Inicialização imediata do tema para evitar oscilações visuais durante o carregamento
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+    <style>
+        /* Estilo do Balão de Fala do "QUEM SOMOS" conforme o Rascunho */
+        .speech-bubble {
+            position: relative;
+            background: #ffffff;
+            border: 3px solid #0077b6;
+            border-radius: 40px;
+            display: inline-block;
+            padding: 18px 45px;
+            box-shadow: 0 10px 25px -5px rgba(0, 119, 182, 0.15);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -22px;
+            right: 25%;
+            border-width: 22px 18px 0 0;
+            border-style: solid;
+            border-color: #0077b6 transparent;
+            display: block;
+            width: 0;
+        }
+
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -16px;
+            right: 26.5%;
+            border-width: 18px 14px 0 0;
+            border-style: solid;
+            border-color: #ffffff transparent;
+            display: block;
+            width: 0;
+            z-index: 1;
+        }
+
+        /* Ajustes do balão para o Modo Noturno */
+        html.dark .speech-bubble {
+            background: #1e293b;
+            border-color: #00b4d8;
+            box-shadow: 0 10px 25px -5px rgba(0, 180, 216, 0.2);
+        }
+
+        html.dark .speech-bubble::after {
+            border-color: #00b4d8 transparent;
+        }
+
+        html.dark .speech-bubble::before {
+            border-color: #1e293b transparent;
+        }
+
+        /* Ocultar barra de rolagem no carrossel mantendo a funcionalidade */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        html.dark .glass-card {
+            background: rgba(30, 41, 59, 0.95);
+        }
+    </style>
+</head>
+<body class="bg-brand-lightBg dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between transition-colors duration-300">
+
+    <!-- CONTÊINER DE TOAST NOTIFICAÇÃO -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3"></div>
+
+    <!-- 1. TOPO / HEADER -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40 shadow-sm transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- LOGO / NOME -->
+            <a href="#" class="flex items-center gap-3 text-brand-darkBlue dark:text-white font-bold text-2xl tracking-tight group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-blue to-brand-cyan flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+                    <i class="fa-solid fa-bolt text-xl"></i>
+                </div>
+                <span>Substitui<span class="text-brand-cyan">Já</span></span>
+            </a>
+
+            <!-- BOTÕES DE AUTENTICAÇÃO E TEMA -->
+            <div class="flex items-center gap-2 sm:gap-4">
+                <!-- BOTÃO MODO NOTURNO -->
+                <button id="theme-toggle" onclick="toggleDarkMode()" aria-label="Alternar modo noturno" class="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-brand-cyan">
+                    <i id="theme-toggle-dark-icon" class="fa-solid fa-moon text-lg"></i>
+                    <i id="theme-toggle-light-icon" class="fa-solid fa-sun text-lg hidden text-amber-400"></i>
+                </button>
+
+                <div id="authButtons" class="flex items-center gap-2 sm:gap-4">
+                <button onclick="openAuthModal('login')" class="px-4 sm:px-5 py-2.5 rounded-full text-brand-blue dark:text-brand-cyan border-2 border-brand-blue/30 dark:border-brand-cyan/30 font-semibold hover:bg-brand-blue hover:text-white dark:hover:bg-brand-cyan dark:hover:text-slate-900 transition-all text-xs sm:text-base focus:outline-none focus:ring-2 focus:ring-brand-blue/50">
+                    <i class="fa-regular fa-user mr-1.5"></i> ENTRAR
+                </button>
+                <button onclick="openAuthModal('register')" class="px-4 sm:px-5 py-2.5 rounded-full bg-gradient-to-r from-brand-blue to-brand-cyan text-white font-semibold hover:shadow-lg hover:opacity-95 transition-all text-xs sm:text-base focus:outline-none focus:ring-2 focus:ring-brand-cyan/50">
+                    CADASTRAR-SE
+                </button>
+                </div>
+                <div id="userButtons" class="hidden items-center gap-2 sm:gap-4">
+                    <span id="userName" class="hidden md:inline text-sm font-semibold text-slate-600 dark:text-slate-300 max-w-[10rem] truncate"></span>
+                    <button onclick="abrirPainel()" class="px-4 sm:px-5 py-2.5 rounded-full bg-gradient-to-r from-brand-blue to-brand-cyan text-white font-semibold hover:shadow-lg hover:opacity-95 transition-all text-xs sm:text-base focus:outline-none focus:ring-2 focus:ring-brand-cyan/50">
+                        <i class="fa-solid fa-table-columns mr-1.5"></i> MEU PAINEL
+                    </button>
+                    <button onclick="sair()" class="px-4 sm:px-5 py-2.5 rounded-full text-brand-blue dark:text-brand-cyan border-2 border-brand-blue/30 dark:border-brand-cyan/30 font-semibold hover:bg-brand-blue hover:text-white dark:hover:bg-brand-cyan dark:hover:text-slate-900 transition-all text-xs sm:text-base focus:outline-none focus:ring-2 focus:ring-brand-blue/50">
+                        SAIR
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <!-- 2. BARRA DE BUSCA E MAIS VISTOS -->
+        <section class="max-w-5xl mx-auto px-4 pt-10 pb-8">
+            <div class="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700 transition-colors duration-300">
+                <div class="relative flex items-center">
+                    <i class="fa-solid fa-magnifying-glass absolute left-5 text-brand-blue dark:text-brand-cyan text-xl"></i>
+                    <input type="text" id="searchInput" oninput="handleSearch()" placeholder="BUSCAR (Ex: Garçom em São Paulo, Enfermeiro noturno...)" class="w-full pl-14 pr-28 py-4 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-2xl text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-cyan focus:bg-white dark:focus:bg-slate-700 text-base sm:text-lg transition-all">
+                    <button onclick="performSearch()" class="absolute right-2 px-6 py-3 bg-brand-blue dark:bg-brand-cyan dark:text-slate-900 text-white font-semibold rounded-xl hover:bg-brand-darkBlue dark:hover:bg-cyan-400 transition-colors text-sm sm:text-base">
+                        BUSCAR
+                    </button>
+                </div>
+
+                <!-- POPULARES / MAIS VISTOS -->
+                <div class="mt-4 flex flex-wrap items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                    <span class="font-semibold text-brand-darkBlue dark:text-brand-cyan uppercase tracking-wider text-xs">MAIS VISTOS:</span>
+                    <button onclick="fillSearch('Garçom')" class="px-3 py-1 bg-slate-100 dark:bg-slate-700 dark:hover:bg-brand-cyan/30 hover:bg-brand-cyan/20 dark:text-slate-200 hover:text-brand-blue dark:hover:text-brand-cyan rounded-full transition-colors font-medium text-xs sm:text-sm">
+                        Garçom
+                    </button>
+                    <button onclick="fillSearch('Enfermeiro')" class="px-3 py-1 bg-slate-100 dark:bg-slate-700 dark:hover:bg-brand-cyan/30 hover:bg-brand-cyan/20 dark:text-slate-200 hover:text-brand-blue dark:hover:text-brand-cyan rounded-full transition-colors font-medium text-xs sm:text-sm">
+                        Enfermeiro
+                    </button>
+                    <button onclick="fillSearch('Cantor')" class="px-3 py-1 bg-slate-100 dark:bg-slate-700 dark:hover:bg-brand-cyan/30 hover:bg-brand-cyan/20 dark:text-slate-200 hover:text-brand-blue dark:hover:text-brand-cyan rounded-full transition-colors font-medium text-xs sm:text-sm">
+                        Cantor
+                    </button>
+                    <button onclick="fillSearch('Cozinheiro')" class="px-3 py-1 bg-slate-100 dark:bg-slate-700 dark:hover:bg-brand-cyan/30 hover:bg-brand-cyan/20 dark:text-slate-200 hover:text-brand-blue dark:hover:text-brand-cyan rounded-full transition-colors font-medium text-xs sm:text-sm">
+                        Cozinheiro
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. CATEGORIAS EM ÍCONES (GRID) -->
+        <section class="max-w-6xl mx-auto px-4 py-6">
+            <h2 class="text-xs uppercase tracking-widest text-center text-slate-400 dark:text-slate-500 font-bold mb-6">Categorias Principais</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+
+                <!-- EVENTOS -->
+                <div onclick="filterCategory('Eventos')" class="category-card cursor-pointer bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-brand-cyan dark:hover:border-brand-cyan transition-all flex flex-col items-center text-center group">
+                    <div class="w-12 h-12 rounded-2xl bg-cyan-50 dark:bg-slate-700 text-brand-cyan flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-glass-cheers"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">EVENTOS</span>
+                </div>
+
+                <!-- CULINÁRIA -->
+                <div onclick="filterCategory('Culinária')" class="category-card cursor-pointer bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-brand-cyan dark:hover:border-brand-cyan transition-all flex flex-col items-center text-center group">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-slate-700 text-brand-blue dark:text-brand-cyan flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-utensils"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">CULINÁRIA</span>
+                </div>
+
+                <!-- TECNOLOGIA -->
+                <div onclick="filterCategory('Tecnologia')" class="category-card cursor-pointer bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-brand-cyan dark:hover:border-brand-cyan transition-all flex flex-col items-center text-center group">
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-code"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">TECNOLOGIA</span>
+                </div>
+
+                <!-- DESIGN -->
+                <div onclick="filterCategory('Design')" class="category-card cursor-pointer bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-brand-cyan dark:hover:border-brand-cyan transition-all flex flex-col items-center text-center group">
+                    <div class="w-12 h-12 rounded-2xl bg-pink-50 dark:bg-slate-700 text-pink-500 dark:text-pink-400 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-palette"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">DESIGN</span>
+                </div>
+
+                <!-- SAÚDE -->
+                <div onclick="filterCategory('Saúde')" class="category-card cursor-pointer bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-brand-cyan dark:hover:border-brand-cyan transition-all flex flex-col items-center text-center group">
+                    <div class="w-12 h-12 rounded-2xl bg-red-50 dark:bg-slate-700 text-red-500 dark:text-red-400 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-heart-pulse"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">SAÚDE</span>
+                </div>
+
+                <!-- ADMIN -->
+                <div onclick="filterCategory('Admin')" class="category-card cursor-pointer bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-brand-cyan dark:hover:border-brand-cyan transition-all flex flex-col items-center text-center group">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-slate-700 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-briefcase"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">ADMIN</span>
+                </div>
+
+                <!-- SETOR DE BELEZA -->
+                <div onclick="filterCategory('Setor de Beleza')" class="category-card cursor-pointer bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-brand-cyan dark:hover:border-brand-cyan transition-all flex flex-col items-center text-center group">
+                    <div class="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-slate-700 text-purple-600 dark:text-purple-400 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-scissors"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">SETOR DE BELEZA</span>
+                </div>
+
+                <!-- OUTRO -->
+                <div onclick="filterCategory('Outro')" class="category-card cursor-pointer bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-brand-cyan dark:hover:border-brand-cyan transition-all flex flex-col items-center text-center group">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-border-all"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">OUTRO</span>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- RESULTADOS DE BUSCA / FILTRO (OCULTO POR PADRÃO) -->
+        <section id="searchResultsSection" class="hidden max-w-5xl mx-auto px-4 py-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-800 dark:text-white text-lg" id="searchResultTitle">Resultados Encontrados</h3>
+                <button onclick="clearSearchFilter()" class="text-xs font-semibold text-brand-blue dark:text-brand-cyan hover:underline">
+                    <i class="fa-solid fa-xmark mr-1"></i> Limpar Filtro
+                </button>
+            </div>
+            <div id="searchResultsList" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Inserido dinamicamente via JS -->
+            </div>
+        </section>
+
+        <!-- 4. SEÇÃO "QUEM SOMOS" COM BALÃO DE FALA -->
+        <section class="max-w-4xl mx-auto px-4 py-14 text-center">
+            <!-- TITULO EM BALÃO DE FALA -->
+            <div class="mb-8">
+                <div class="speech-bubble">
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-brand-darkBlue dark:text-white tracking-wide">
+                        QUEM SOMOS?
+                    </h2>
+                </div>
+            </div>
+
+            <!-- TEXTO CONFORME RASCUNHO E PDF -->
+            <p class="text-lg sm:text-2xl text-slate-700 dark:text-slate-300 font-medium leading-relaxed max-w-3xl mx-auto">
+                A <span class="font-bold text-brand-blue dark:text-brand-cyan">SubstituiJá</span> proporciona um ambiente seguro de contratação emergencial para ambos os lados.
+            </p>
+
+            <!-- DESTAQUES ADICIONAIS DA PROPOSTA -->
+            <div class="grid sm:grid-cols-3 gap-6 mt-12 text-left">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-start gap-4 transition-colors">
+                    <div class="text-brand-cyan text-2xl mt-1"><i class="fa-solid fa-clock"></i></div>
+                    <div>
+                        <h4 class="font-bold text-brand-darkBlue dark:text-white">Resposta Imediata</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Conecte-se com profissionais qualificados e disponíveis em poucos minutos após o registro da falta.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-start gap-4 transition-colors">
+                    <div class="text-brand-blue dark:text-brand-cyan text-2xl mt-1"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div>
+                        <h4 class="font-bold text-brand-darkBlue dark:text-white">Segurança Garantida</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Histórico verificado, avaliações mútuas e garantia de pagamento sem riscos para empresas e substitutos.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-start gap-4 transition-colors">
+                    <div class="text-indigo-600 dark:text-indigo-400 text-2xl mt-1"><i class="fa-solid fa-chart-line"></i></div>
+                    <div>
+                        <h4 class="font-bold text-brand-darkBlue dark:text-white">Sem Paralisação</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Mantenha a produtividade alta e evite a sobrecarga das equipes diante de faltas de última hora.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. SEÇÃO "COMO USAR NOSSOS SERVIÇOS" (CARROSSEL/CARDS) -->
+        <section class="max-w-6xl mx-auto px-4 py-12">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-brand-darkBlue dark:text-white uppercase">
+                        COMO USAR NOSSOS SERVIÇOS
+                    </h2>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Navegue pelas etapas e entenda a facilidade de contratação</p>
+                </div>
+
+                <!-- BOTÕES DE NAVEGAÇÃO LATERAL (< e >) -->
+                <div class="flex items-center gap-3">
+                    <button onclick="scrollCarousel(-1)" class="w-12 h-12 rounded-full border-2 border-brand-blue/30 dark:border-brand-cyan/30 text-brand-blue dark:text-brand-cyan hover:bg-brand-blue dark:hover:bg-brand-cyan hover:text-white dark:hover:text-slate-900 transition-all flex items-center justify-center font-bold text-lg shadow-sm">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button onclick="scrollCarousel(1)" class="w-12 h-12 rounded-full border-2 border-brand-blue/30 dark:border-brand-cyan/30 text-brand-blue dark:text-brand-cyan hover:bg-brand-blue dark:hover:bg-brand-cyan hover:text-white dark:hover:text-slate-900 transition-all flex items-center justify-center font-bold text-lg shadow-sm">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- CONTAINER DO CARROSSEL -->
+            <div id="carouselContainer" class="flex gap-6 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-6">
+
+                <!-- CARD 1: PARA EMPRESAS (ÍCONE LAPTOP) -->
+                <div class="snap-start flex-shrink-0 w-full sm:w-[320px] md:w-[360px] bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-md flex flex-col justify-between hover:border-brand-cyan transition-all">
+                    <div>
+                        <div class="w-full h-44 rounded-2xl bg-slate-50 dark:bg-slate-700 flex flex-col items-center justify-center text-brand-blue dark:text-brand-cyan mb-6 border border-slate-100 dark:border-slate-600 relative overflow-hidden group">
+                            <i class="fa-solid fa-laptop text-6xl group-hover:scale-110 transition-transform duration-300"></i>
+                            <span class="absolute top-3 left-3 bg-brand-cyan/20 text-brand-blue dark:text-brand-cyan font-bold text-xs px-3 py-1 rounded-full">Para Empresas</span>
+                        </div>
+                        <h3 class="font-bold text-xl text-brand-darkBlue dark:text-white mb-2">Para Empresas</h3>
+                        <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-6">
+                            Sua equipe teve uma falta imprevista? Registre a vaga emergencial indicando a função, horário e local para acionar imediatamente a nossa rede.
+                        </p>
+                    </div>
+                    <button onclick="openDetailModal('empresas')" class="w-full py-3 bg-slate-100 dark:bg-slate-700 hover:bg-brand-blue dark:hover:bg-brand-cyan hover:text-white dark:hover:text-slate-900 font-bold text-brand-blue dark:text-brand-cyan rounded-xl transition-colors text-sm uppercase tracking-wider">
+                        LEIA MAIS
+                    </button>
+                </div>
+
+                <!-- CARD 2: PARA SUBSTITUTOS (ÍCONE MICROFONE/TRABALHADOR) -->
+                <div class="snap-start flex-shrink-0 w-full sm:w-[320px] md:w-[360px] bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-md flex flex-col justify-between hover:border-brand-cyan transition-all">
+                    <div>
+                        <div class="w-full h-44 rounded-2xl bg-slate-50 dark:bg-slate-700 flex flex-col items-center justify-center text-brand-cyan mb-6 border border-slate-100 dark:border-slate-600 relative overflow-hidden group">
+                            <i class="fa-solid fa-microphone-lines text-6xl group-hover:scale-110 transition-transform duration-300"></i>
+                            <span class="absolute top-3 left-3 bg-brand-cyan/20 text-brand-blue dark:text-brand-cyan font-bold text-xs px-3 py-1 rounded-full">Para Profissionais</span>
+                        </div>
+                        <h3 class="font-bold text-xl text-brand-darkBlue dark:text-white mb-2">Para Trabalhadores</h3>
+                        <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-6">
+                            Escolha sua categoria e área de atuação no cadastro. Acompanhe os convites no painel e aceite apenas os trabalhos que puder realizar.
+                        </p>
+                    </div>
+                    <button onclick="openDetailModal('substitutos')" class="w-full py-3 bg-slate-100 dark:bg-slate-700 hover:bg-brand-blue dark:hover:bg-brand-cyan hover:text-white dark:hover:text-slate-900 font-bold text-brand-blue dark:text-brand-cyan rounded-xl transition-colors text-sm uppercase tracking-wider">
+                        LEIA MAIS
+                    </button>
+                </div>
+
+                <!-- CARD 3: GEOLOCALIZAÇÃO E MATCHING (ÍCONE CARRO) -->
+                <div class="snap-start flex-shrink-0 w-full sm:w-[320px] md:w-[360px] bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-md flex flex-col justify-between hover:border-brand-cyan transition-all">
+                    <div>
+                        <div class="w-full h-44 rounded-2xl bg-slate-50 dark:bg-slate-700 flex flex-col items-center justify-center text-indigo-500 dark:text-indigo-400 mb-6 border border-slate-100 dark:border-slate-600 relative overflow-hidden group">
+                            <i class="fa-solid fa-car-side text-6xl group-hover:scale-110 transition-transform duration-300"></i>
+                            <span class="absolute top-3 left-3 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-bold text-xs px-3 py-1 rounded-full">Algoritmo Inteligente</span>
+                        </div>
+                        <h3 class="font-bold text-xl text-brand-darkBlue dark:text-white mb-2">Compatibilidade por Perfil</h3>
+                        <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-6">
+                            Encontre profissionais disponíveis por categoria e função. Experiência, cidade e avaliações ajudam a comparar os perfis antes de enviar o convite.
+                        </p>
+                    </div>
+                    <button onclick="openDetailModal('matching')" class="w-full py-3 bg-slate-100 dark:bg-slate-700 hover:bg-brand-blue dark:hover:bg-brand-cyan hover:text-white dark:hover:text-slate-900 font-bold text-brand-blue dark:text-brand-cyan rounded-xl transition-colors text-sm uppercase tracking-wider">
+                        SAIBA MAIS
+                    </button>
+                </div>
+
+                <!-- CARD 4: CRITÉRIOS DE QUALIDADE -->
+                <div class="snap-start flex-shrink-0 w-full sm:w-[320px] md:w-[360px] bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-md flex flex-col justify-between hover:border-brand-cyan transition-all">
+                    <div>
+                        <div class="w-full h-44 rounded-2xl bg-slate-50 dark:bg-slate-700 flex flex-col items-center justify-center text-amber-500 dark:text-amber-400 mb-6 border border-slate-100 dark:border-slate-600 relative overflow-hidden group">
+                            <i class="fa-solid fa-star-half-stroke text-6xl group-hover:scale-110 transition-transform duration-300"></i>
+                            <span class="absolute top-3 left-3 bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 font-bold text-xs px-3 py-1 rounded-full">Confiança</span>
+                        </div>
+                        <h3 class="font-bold text-xl text-brand-darkBlue dark:text-white mb-2">Avaliações e Selos</h3>
+                        <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-6">
+                            Após cada atendimento, empresas e prestadores avaliam o serviço. Isso constrói reputação e assegura alto nível de profissionalismo nas contratações.
+                        </p>
+                    </div>
+                    <button onclick="openDetailModal('qualidade')" class="w-full py-3 bg-slate-100 dark:bg-slate-700 hover:bg-brand-blue dark:hover:bg-brand-cyan hover:text-white dark:hover:text-slate-900 font-bold text-brand-blue dark:text-brand-cyan rounded-xl transition-colors text-sm uppercase tracking-wider">
+                        SAIBA MAIS
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SEÇÃO INTERATIVA EXTRA PARA APRESENTAÇÃO DO PROJETO ESCOLAR -->
+        <section class="max-w-6xl mx-auto px-4 py-10 my-8 bg-gradient-to-r from-brand-darkBlue to-brand-blue dark:from-slate-800 dark:to-brand-darkBlue rounded-3xl text-white shadow-xl">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-8 p-4 sm:p-8">
+                <div class="space-y-3 max-w-xl">
+                    <span class="inline-block px-3 py-1 bg-brand-cyan/20 text-brand-cyan font-semibold text-xs rounded-full uppercase tracking-wider">
+                        Demonstração Prática
+                    </span>
+                    <h3 class="text-2xl sm:text-3xl font-bold leading-tight">
+                        Precisa solicitar um substituto emergencial agora?
+                    </h3>
+                    <p class="text-slate-200 text-sm leading-relaxed">
+                        Simule a publicação de uma falta de última hora e teste como nosso sistema seleciona o substituto ideal em instantes.
+                    </p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                    <button onclick="openEmergencyModal()" class="px-6 py-4 bg-brand-cyan text-slate-900 font-bold rounded-2xl hover:bg-white transition-all text-center shadow-lg hover:scale-105">
+                        <i class="fa-solid fa-bullhorn mr-2"></i> Solicitar Substituto
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-slate-400 py-12 border-t border-slate-800 text-sm">
+        <div class="max-w-7xl mx-auto px-4 grid sm:grid-cols-2 md:grid-cols-4 gap-8">
+            <div>
+                <div class="flex items-center gap-2 text-white font-bold text-xl mb-4">
+                    <i class="fa-solid fa-bolt text-brand-cyan"></i> SubstituiJá
+                </div>
+                <p class="text-xs text-slate-400 leading-relaxed mb-4">
+                    Projeto escolar desenvolvido para solução ágil e inteligente de substituição emergencial de funcionários faltantes.
+                </p>
+                <span class="text-xs text-slate-500">© 2026 SubstituiJá - Todos os direitos reservados.</span>
+            </div>
+
+            <div>
+                <h5 class="text-white font-semibold mb-3">Solução</h5>
+                <ul class="space-y-2 text-xs">
+                    <li><a href="#" class="hover:text-brand-cyan transition-colors">Para Empresas</a></li>
+                    <li><a href="#" class="hover:text-brand-cyan transition-colors">Para Profissionais</a></li>
+                    <li><a href="#" class="hover:text-brand-cyan transition-colors">Segurança e Confiabilidade</a></li>
+                    <li><a href="#" class="hover:text-brand-cyan transition-colors">Modelo de Comissão</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h5 class="text-white font-semibold mb-3">Categorias</h5>
+                <ul class="space-y-2 text-xs">
+                    <li><a href="#" onclick="filterCategory('Eventos')" class="hover:text-brand-cyan transition-colors">Eventos & Festas</a></li>
+                    <li><a href="#" onclick="filterCategory('Culinária')" class="hover:text-brand-cyan transition-colors">Gastronomia & Restaurantes</a></li>
+                    <li><a href="#" onclick="filterCategory('Saúde')" class="hover:text-brand-cyan transition-colors">Saúde & Cuidados</a></li>
+                    <li><a href="#" onclick="filterCategory('Tecnologia')" class="hover:text-brand-cyan transition-colors">TI & Suporte</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h5 class="text-white font-semibold mb-3">Contato do Projeto</h5>
+                <ul class="space-y-2 text-xs">
+                    <li><i class="fa-regular fa-envelope mr-2 text-brand-cyan"></i> contato@substituija.com.br</li>
+                    <li><i class="fa-solid fa-phone mr-2 text-brand-cyan"></i> (11) 9999-0000</li>
+                    <li><i class="fa-solid fa-location-dot mr-2 text-brand-cyan"></i> São Paulo - SP</li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL DE AUTENTICAÇÃO (ENTRAR / CADASTRAR-SE) -->
+    <div id="authModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100 dark:border-slate-700">
+            <button onclick="closeModal('authModal')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- ABAS -->
+            <div class="flex border-b border-slate-100 dark:border-slate-700 mb-6">
+                <button id="tabLogin" onclick="switchAuthTab('login')" class="flex-1 py-3 font-bold text-center border-b-2 border-brand-blue dark:border-brand-cyan text-brand-blue dark:text-brand-cyan">
+                    Entrar
+                </button>
+                <button id="tabRegister" onclick="switchAuthTab('register')" class="flex-1 py-3 font-bold text-center border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    Cadastrar-se
+                </button>
+            </div>
+
+            <!-- FORMULÁRIO LOGIN -->
+            <form id="formLogin" onsubmit="submitAuth(event, 'login')" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Entrar como</label>
+                    <select id="loginTipo" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                        <option value="EMPRESA">Empresa</option>
+                        <option value="PROFISSIONAL">Profissional</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">E-mail</label>
+                    <input type="email" id="loginEmail" required placeholder="seu@email.com"  class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Senha</label>
+                    <input type="password" id="loginSenha" required placeholder="••••••••"  class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-brand-blue dark:bg-brand-cyan dark:text-slate-900 text-white font-bold rounded-xl hover:bg-brand-darkBlue dark:hover:bg-cyan-400 transition-colors shadow-md">
+                    ACESSAR CONTA
+                </button>
+            </form>
+
+            <!-- FORMULÁRIO CADASTRO -->
+            <form id="formRegister" onsubmit="submitAuth(event, 'register')" class="space-y-4 hidden max-h-[60vh] overflow-y-auto pr-1">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Tipo de Perfil</label>
+                    <select id="regTipo" onchange="toggleRegTipo()" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                        <option value="empresa">Sou Empresa (Busco Substitutos)</option>
+                        <option value="substituto">Sou Profissional (Quero Trabalhar)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Nome Completo / Razão Social</label>
+                    <input type="text" id="regNome" required placeholder="Digite o nome"  class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">E-mail</label>
+                    <input type="email" id="regEmail" required placeholder="seu@email.com"  class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Senha (mín. 6 caracteres)</label>
+                    <input type="password" id="regSenha" required placeholder="Crie uma senha" minlength="6" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Telefone (opcional)</label>
+                    <input type="tel" id="regTelefone" placeholder="DDD + número"  class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                    <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Cidade (opcional)</label>
+                    <input type="text" id="regCidade" placeholder="Sua cidade"  class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                </div>
+                <div id="regEmpresa" class="space-y-4">
+                    <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">CNPJ</label>
+                    <input type="text" id="regCnpj" placeholder="00.000.000/0000-00"  class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                </div>
+                <div id="regProfissional" class="space-y-4 hidden">
+                    <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">CPF</label>
+                    <input type="text" id="regCpf" placeholder="000.000.000-00"  class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                    <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Categoria profissional</label>
+                    <select id="regCategoria" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white">
+                        <option value="">Selecione sua categoria</option>
+                        <option value="Eventos">Eventos</option>
+                        <option value="Culinária">Culinária</option>
+                        <option value="Tecnologia">Tecnologia</option>
+                        <option value="Design">Design</option>
+                        <option value="Saúde">Saúde</option>
+                        <option value="Admin">Administração</option>
+                        <option value="Setor de Beleza">Setor de Beleza</option>
+                        <option value="Outro">Outra área</option>
+                    </select>
+                </div>
+                    <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Função / Área de atuação</label>
+                    <input type="text" id="regFuncao" placeholder="Ex: Garçom, Enfermeiro"  class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                    <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Anos de experiência</label>
+                    <input type="number" id="regAnos" placeholder="0" min="0" max="60" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-brand-cyan text-slate-900 font-bold rounded-xl hover:bg-brand-blue hover:text-white transition-colors shadow-md">
+                    CRIAR MINHA CONTA
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE DETALHES "LEIA MAIS / SAIBA MAIS" -->
+    <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100 dark:border-slate-700">
+            <button onclick="closeModal('detailModal')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div id="detailModalContent">
+                <!-- Conteúdo Dinâmico via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SIMULADOR DE VAGA EMERGENCIAL -->
+    <div id="emergencyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100 dark:border-slate-700">
+            <button onclick="closeModal('emergencyModal')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-2xl font-bold text-brand-darkBlue dark:text-white mb-2">Registrar Falta Emergencial</h3>
+            <p class="text-slate-500 dark:text-slate-400 text-xs mb-6">Informe os detalhes da vaga. Em seguida, escolha os profissionais disponíveis que receberão o convite.</p>
+
+            <form onsubmit="handleEmergencySubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Função / Cargo</label>
+                    <input type="text" id="emCargo" required placeholder="Ex: Garçom, Cozinheiro, Técnico de Enfermagem"  class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Data</label>
+                    <input type="date" id="emData" required placeholder=""  class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                    <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Horário de Início</label>
+                    <input type="time" id="emHora" required placeholder=""  class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Duração (horas)</label>
+                    <input type="number" id="emDuracao" required placeholder="Ex: 6" min="1" max="24" step="1" value="4" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                    <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Valor/Hora (R$)</label>
+                    <input type="number" id="emValor" required placeholder="Ex: 35" min="0.01" step="0.01" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Endereço / Localidade</label>
+                    <input type="text" id="emEndereco" required placeholder="Rua, Bairro e Cidade"  class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue dark:focus:ring-brand-cyan">
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors shadow-lg flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> PUBLICAR E ESCOLHER PROFISSIONAIS
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PARA ESCOLHER PROFISSIONAIS PARA UMA VAGA -->
+    <div id="conviteModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl relative border border-slate-100 dark:border-slate-700">
+            <button onclick="closeModal('conviteModal')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl" aria-label="Fechar seleção de profissionais">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-2xl font-bold text-brand-darkBlue dark:text-white mb-2">Escolher profissionais</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-5">Selecione quem receberá o convite. O profissional precisa aceitar para confirmar a substituição.</p>
+            <label for="conviteVaga" class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Vaga</label>
+            <select id="conviteVaga" onchange="atualizarListaProfissionaisParaConvite()" class="w-full px-4 py-3 mb-4 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white"></select>
+            <label for="conviteFiltroCategoria" class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Filtrar categoria</label>
+            <select id="conviteFiltroCategoria" onchange="renderListaProfissionaisConvite()" class="w-full px-4 py-3 mb-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white"></select>
+            <input id="buscaProfissionalConvite" type="search" oninput="renderListaProfissionaisConvite()" placeholder="Buscar por nome, função ou cidade" class="w-full px-4 py-3 mb-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white placeholder-slate-400">
+            <div id="listaProfissionaisConvite" class="space-y-2"></div>
+            <div class="flex flex-wrap items-center justify-between gap-3 mt-5">
+                <p id="contagemProfissionaisConvite" class="text-xs text-slate-500 dark:text-slate-400"></p>
+                <button id="enviarConvitesBtn" onclick="enviarConvitesSelecionados()" class="px-5 py-3 bg-brand-blue dark:bg-brand-cyan dark:text-slate-900 text-white font-bold rounded-xl hover:bg-brand-darkBlue transition-colors">
+                    Enviar convites
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DO PAINEL (EMPRESA / PROFISSIONAL) -->
+    <div id="painelModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl relative border border-slate-100 dark:border-slate-700">
+            <button onclick="closeModal('painelModal')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 id="painelTitulo" class="text-2xl font-bold text-brand-darkBlue dark:text-white mb-5">Meu painel</h3>
+            <div id="painelConteudo"></div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // GERENCIADOR DE MODO NOTURNO
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeIcons(isDark);
+        }
+
+        function updateThemeIcons(isDark) {
+            const darkIcon = document.getElementById('theme-toggle-dark-icon');
+            const lightIcon = document.getElementById('theme-toggle-light-icon');
+            if (darkIcon && lightIcon) {
+                if (isDark) {
+                    darkIcon.classList.add('hidden');
+                    lightIcon.classList.remove('hidden');
+                } else {
+                    darkIcon.classList.remove('hidden');
+                    lightIcon.classList.add('hidden');
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const isDark = document.documentElement.classList.contains('dark');
+            updateThemeIcons(isDark);
+        });
+
+        // ===== COMUNICAÇÃO COM A API =====
+const API = '/api';
+let sessao = lerSessao();
+const vagasEmTela = new Map();
+let profissionaisConvite = [];
+let profissionaisSelecionados = new Set();
+let solicitacoesDaVagaConvite = [];
+let vagaAtualConvite = null;
+
+function lerSessao() {
+            try { return JSON.parse(localStorage.getItem('sessao')) || null; } catch { return null; }
+        }
+
+        function salvarSessao(nova) {
+            sessao = nova;
+            if (nova) localStorage.setItem('sessao', JSON.stringify(nova));
+            else localStorage.removeItem('sessao');
+            atualizarHeader();
+        }
+
+        async function api(caminho, { method = 'GET', body } = {}) {
+            const headers = {};
+            if (body !== undefined) headers['Content-Type'] = 'application/json';
+            if (sessao && sessao.token) headers['Authorization'] = 'Bearer ' + sessao.token;
+
+            const resp = await fetch(API + caminho, {
+                method,
+                headers,
+                body: body !== undefined ? JSON.stringify(body) : undefined,
+            });
+            if (resp.status === 204) return null;
+
+            const dados = await resp.json().catch(() => ({}));
+            if (!resp.ok) {
+                if (resp.status === 401 && sessao) salvarSessao(null);
+                throw new Error(dados.erro || 'Erro ' + resp.status);
+            }
+            return dados;
+        }
+
+        const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+        const brl = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const dataBR = (iso) => new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+        const norm = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const val = (id) => document.getElementById(id).value.trim();
+
+        // As categorias das vagas públicas são estimadas pelo texto; profissionais têm categoria própria.
+        const CATEGORIAS = {
+            'Eventos': ['cantor', 'musico', 'dj', 'evento', 'festa', 'fotografo', 'cerimonialista', 'recepcionista', 'animador'],
+            'Culinária': ['garcom', 'cozinheiro', 'chef', 'copeiro', 'barista', 'bartender', 'confeiteiro', 'padeiro', 'churrasqueiro', 'cozinha'],
+            'Tecnologia': ['ti', 'suporte', 'desenvolvedor', 'programador', 'informatica', 'redes', 'tecnologia'],
+            'Design': ['designer', 'design', 'grafico', 'ilustrador', 'diagramador'],
+            'Saúde': ['enfermeiro', 'enfermagem', 'tecnico de enfermagem', 'cuidador', 'medico', 'fisioterapeuta', 'saude'],
+            'Admin': ['administrativo', 'auxiliar administrativo', 'secretaria', 'secretario', 'recepcao', 'atendente', 'assistente'],
+            'Setor de Beleza': ['cabeleireiro', 'cabeleireira', 'manicure', 'maquiador', 'maquiadora', 'barbeiro', 'esteticista', 'beleza'],
+        };
+
+        function categoriaCorresponde(vaga, categoria) {
+            const texto = norm(vaga.titulo + ' ' + (vaga.descricao || ''));
+            const bate = (c) => CATEGORIAS[c].some((k) => new RegExp('\\b' + k + '\\b').test(texto));
+            if (categoria === 'Outro') return !Object.keys(CATEGORIAS).some(bate);
+            return bate(categoria);
+        }
+
+        function categoriaDaFuncao(funcao) {
+            const texto = norm(funcao);
+            return Object.entries(CATEGORIAS).find(([, palavras]) =>
+                palavras.some((palavra) => new RegExp('\\b' + palavra + '\\b').test(texto))
+            )?.[0] || 'Outro';
+        }
+
+        // ROLAGEM DO CARROSSEL
+        function scrollCarousel(direction) {
+            const container = document.getElementById('carouselContainer');
+            const scrollAmount = 340;
+            container.scrollBy({
+                left: direction * scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+
+        // AUTO-PREENCHER CAMPO DE BUSCA
+        function fillSearch(term) {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.value = term;
+            performSearch();
+        }
+
+        // EXECUTAR BUSCA
+        let temporizadorBusca;
+        let buscaAtual = 0;
+
+        async function performSearch() {
+            const termo = document.getElementById('searchInput').value.trim();
+            if (!termo) return;
+            const minhaBusca = ++buscaAtual;
+            try {
+                const vagas = await api('/vagas?busca=' + encodeURIComponent(termo));
+                if (minhaBusca !== buscaAtual) return;
+                renderSearchResults(vagas, `Resultados para "${termo}"`);
+            } catch (err) {
+                showToast(err.message);
+            }
+        }
+
+
+        async function filterCategory(categoryName) {
+            const minhaBusca = ++buscaAtual;
+            try {
+                if (sessao && sessao.tipo === 'EMPRESA') {
+                    const profissionais = await api('/profissionais?categoria=' + encodeURIComponent(categoryName));
+                    if (minhaBusca !== buscaAtual) return;
+                    renderProfessionalResults(profissionais, categoryName);
+                    return;
+                }
+
+                const vagas = await api('/vagas');
+                if (minhaBusca !== buscaAtual) return;
+                renderSearchResults(
+                    vagas.filter((v) => categoriaCorresponde(v, categoryName)),
+                    `Categoria: ${categoryName}`,
+                );
+            } catch (err) {
+                showToast(err.message);
+            }
+        }
+
+        function renderProfessionalResults(items, categoryName) {
+            const section = document.getElementById('searchResultsSection');
+            const titleElem = document.getElementById('searchResultTitle');
+            const listElem = document.getElementById('searchResultsList');
+
+            titleElem.textContent = `Profissionais disponíveis: ${categoryName}`;
+            listElem.innerHTML = '';
+
+            if (items.length === 0) {
+                listElem.innerHTML = `
+                    <div class="col-span-full bg-white dark:bg-slate-800 p-8 rounded-2xl text-center border border-slate-100 dark:border-slate-700">
+                        <i class="fa-solid fa-user-group text-4xl text-slate-300 dark:text-slate-600 mb-3"></i>
+                        <p class="font-bold text-slate-700 dark:text-slate-200">Nenhum profissional disponível nesta categoria.</p>
+                        <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Novos profissionais aparecerão aqui quando estiverem disponíveis.</p>
+                    </div>
+                `;
+            } else {
+                items.forEach((profissional) => {
+                    listElem.innerHTML += `
+                        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                            <h4 class="font-bold text-slate-800 dark:text-white text-lg">${esc(profissional.nome)}</h4>
+                            <p class="text-sm text-brand-blue dark:text-brand-cyan mt-1">${esc(profissional.funcao)}</p>
+                            <span class="inline-block mt-2 text-xs font-semibold px-2.5 py-1 bg-cyan-50 dark:bg-cyan-900/30 text-brand-blue dark:text-brand-cyan rounded-full">${esc(profissional.categoria || categoryName)}</span>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                                ${esc(profissional.anosExperiencia)} ano(s) de experiência
+                                ${profissional.cidade ? ` · ${esc(profissional.cidade)}` : ''}
+                            </p>
+                            <p class="text-xs text-amber-500 mt-2">
+                                <i class="fa-solid fa-star"></i> ${Number(profissional.notaMedia || 0).toFixed(1)} / 5
+                            </p>
+                            <button onclick="convidarProfissional(${profissional.id})" class="mt-4 w-full py-2 bg-brand-cyan text-slate-900 font-bold rounded-xl hover:bg-brand-blue hover:text-white transition-colors text-xs uppercase">
+                                Convidar para uma vaga
+                            </button>
+                        </div>
+                    `;
+                });
+            }
+
+            section.classList.remove('hidden');
+            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function convidarProfissional(profissionalId) {
+            if (!sessao || sessao.tipo !== 'EMPRESA') {
+                showToast('Entre com uma conta de empresa para convidar profissionais.');
+                return;
+            }
+            await abrirSelecaoProfissionais(null, profissionalId);
+        }
+
+        async function abrirSelecaoProfissionais(vagaId = null, profissionalId = null) {
+            if (!sessao || sessao.tipo !== 'EMPRESA') {
+                showToast('Entre com uma conta de empresa para selecionar profissionais.');
+                return;
+            }
+            try {
+                const [vagas, profissionais] = await Promise.all([
+                    api('/vagas/minhas'),
+                    api('/profissionais'),
+                ]);
+                const vagasAbertas = vagas.filter((vaga) => vaga.status === 'aberta');
+                if (vagasAbertas.length === 0) {
+                    showToast('Publique uma vaga aberta antes de convidar profissionais.');
+                    return;
+                }
+
+                profissionaisConvite = profissionais;
+                profissionaisSelecionados = new Set(profissionalId ? [profissionalId] : []);
+                document.getElementById('conviteFiltroCategoria').innerHTML =
+                    '<option value="">Todas as categorias</option>' +
+                    Object.keys(CATEGORIAS).map((categoria) => `<option value="${esc(categoria)}">${esc(categoria)}</option>`).join('');
+                document.getElementById('conviteVaga').innerHTML = vagasAbertas.map((vaga) =>
+                    `<option value="${vaga.id}">${esc(vaga.titulo)} · ${esc(dataBR(vaga.dataVaga))}</option>`
+                ).join('');
+                const vagaInicial = vagasAbertas.find((vaga) => vaga.id === vagaId) || vagasAbertas[0];
+                document.getElementById('conviteVaga').value = vagaInicial.id;
+                vagaAtualConvite = String(vagaInicial.id);
+                document.getElementById('buscaProfissionalConvite').value = '';
+                document.getElementById('conviteModal').classList.remove('hidden');
+                await atualizarListaProfissionaisParaConvite();
+            } catch (err) {
+                showToast(err.message);
+            }
+        }
+
+        async function atualizarListaProfissionaisParaConvite() {
+            const vagaId = document.getElementById('conviteVaga').value;
+            if (!vagaId) return;
+            if (vagaAtualConvite !== vagaId) {
+                profissionaisSelecionados.clear();
+                vagaAtualConvite = vagaId;
+                const vagaSelecionada = Array.from(document.getElementById('conviteVaga').options)
+                    .find((opcao) => opcao.value === vagaId);
+                const categoriaVaga = categoriaDaFuncao(vagaSelecionada?.textContent.split(' · ')[0] || '');
+                document.getElementById('conviteFiltroCategoria').value =
+                    categoriaVaga === 'Outro' ? '' : categoriaVaga;
+            }
+            try {
+                solicitacoesDaVagaConvite = await api(`/vagas/${vagaId}/solicitacoes`);
+                const convidados = new Set(solicitacoesDaVagaConvite.map((s) => s.profissionalId));
+                profissionaisSelecionados = new Set(
+                    Array.from(profissionaisSelecionados).filter((id) => !convidados.has(id)),
+                );
+                renderListaProfissionaisConvite();
+            } catch (err) {
+                showToast(err.message);
+            }
+        }
+
+        function renderListaProfissionaisConvite() {
+            const lista = document.getElementById('listaProfissionaisConvite');
+            const busca = norm(document.getElementById('buscaProfissionalConvite').value);
+            const categoria = document.getElementById('conviteFiltroCategoria').value;
+            const vaga = Array.from(document.getElementById('conviteVaga').options)
+                .find((opcao) => opcao.value === document.getElementById('conviteVaga').value);
+            const cargo = norm(vaga?.textContent.split(' · ')[0] || '');
+            const jaConvidados = new Map(solicitacoesDaVagaConvite.map((s) => [s.profissionalId, s.status]));
+            const candidatos = profissionaisConvite
+                .filter((p) => !jaConvidados.has(p.id))
+                .filter((p) => !categoria || norm(p.categoria) === norm(categoria))
+                .filter((p) => !busca || norm(`${p.nome} ${p.funcao} ${p.cidade || ''}`).includes(busca))
+                .sort((a, b) => {
+                    const funcaoA = norm(a.funcao);
+                    const funcaoB = norm(b.funcao);
+                    const pontuacaoA = funcaoA === cargo ? 2 : (funcaoA.includes(cargo) || cargo.includes(funcaoA) ? 1 : 0);
+                    const pontuacaoB = funcaoB === cargo ? 2 : (funcaoB.includes(cargo) || cargo.includes(funcaoB) ? 1 : 0);
+                    return pontuacaoB - pontuacaoA || (b.notaMedia || 0) - (a.notaMedia || 0) || b.anosExperiencia - a.anosExperiencia;
+                });
+
+            if (candidatos.length === 0) {
+                lista.innerHTML = `
+                    <p class="text-sm text-slate-500 dark:text-slate-400 text-center py-6">
+                        ${profissionaisConvite.length === 0 ? 'Nenhum profissional está disponível no momento.' : 'Nenhum profissional disponível corresponde à busca.'}
+                    </p>`;
+            } else {
+                lista.innerHTML = candidatos.map((p) => `
+                    <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-brand-cyan cursor-pointer">
+                        <input type="checkbox" class="mt-1 accent-cyan-600" value="${p.id}" ${profissionaisSelecionados.has(p.id) ? 'checked' : ''} onchange="atualizarSelecaoConvite(this)">
+                        <span class="flex-1">
+                            <span class="block font-semibold text-slate-800 dark:text-white">${esc(p.nome)} · ${esc(p.funcao)}</span>
+                            <span class="block text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                ${esc(p.categoria)} ·
+                                ${esc(p.anosExperiencia)} ano(s) de experiência${p.cidade ? ` · ${esc(p.cidade)}` : ''}
+                                · ★ ${Number(p.notaMedia || 0).toFixed(1)}
+                            </span>
+                        </span>
+                    </label>
+                `).join('');
+            }
+            atualizarContagemConvite();
+        }
+
+        function atualizarSelecaoConvite(checkbox) {
+            const id = Number(checkbox.value);
+            if (checkbox.checked) profissionaisSelecionados.add(id);
+            else profissionaisSelecionados.delete(id);
+            atualizarContagemConvite();
+        }
+
+        function atualizarContagemConvite() {
+            const quantidade = profissionaisSelecionados.size;
+            document.getElementById('contagemProfissionaisConvite').textContent =
+                quantidade === 1 ? '1 profissional selecionado' : `${quantidade} profissionais selecionados`;
+            document.getElementById('enviarConvitesBtn').disabled = quantidade === 0;
+        }
+
+        async function enviarConvitesSelecionados() {
+            const vagaId = document.getElementById('conviteVaga').value;
+            const profissionalIds = Array.from(profissionaisSelecionados);
+            if (!vagaId || profissionalIds.length === 0) {
+                showToast('Selecione ao menos um profissional para convidar.');
+                return;
+            }
+            const botao = document.getElementById('enviarConvitesBtn');
+            botao.disabled = true;
+            try {
+                const resposta = await api(`/vagas/${vagaId}/solicitacoes`, {
+                    method: 'POST',
+                    body: { profissionalIds },
+                });
+                closeModal('conviteModal');
+                profissionaisSelecionados.clear();
+                showToast(`${resposta.notificados} convite(s) enviado(s). A confirmação depende do profissional.`);
+                if (!document.getElementById('painelModal').classList.contains('hidden')) carregarPainel();
+            } catch (err) {
+                showToast(err.message);
+            } finally {
+                botao.disabled = false;
+            }
+        }
+
+        function handleSearch() {
+            const term = document.getElementById('searchInput').value.trim();
+            if (term.length > 2) {
+                performSearch();
+            } else if (term.length === 0) {
+                clearSearchFilter();
+            }
+        }
+
+        // FILTRAR POR CATEGORIA CLICADA
+
+        // RENDERIZAR RESULTADOS
+        function renderSearchResults(items, title) {
+            const section = document.getElementById('searchResultsSection');
+            const titleElem = document.getElementById('searchResultTitle');
+            const listElem = document.getElementById('searchResultsList');
+
+            titleElem.textContent = title;
+            listElem.innerHTML = '';
+
+            if (items.length === 0) {
+                listElem.innerHTML = `
+                    <div class="col-span-full bg-white dark:bg-slate-800 p-8 rounded-2xl text-center border border-slate-100 dark:border-slate-700">
+                        <i class="fa-solid fa-magnifying-glass text-4xl text-slate-300 dark:text-slate-600 mb-3"></i>
+                        <p class="font-bold text-slate-700 dark:text-slate-200">Nenhum profissional ou vaga encontrada no momento.</p>
+                        <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Tente buscar por "Garçom", "Enfermeiro" ou "Cozinheiro".</p>
+                    </div>
+                `;
+            } else {
+                items.forEach(item => {
+                    vagasEmTela.set(item.id, item);
+                    const ehMinha = sessao && sessao.tipo === 'EMPRESA' && sessao.usuario.id === item.empresaId;
+                    const botao = ehMinha
+                        ? `<button onclick="solicitarSubstitutos(${item.id})" class="mt-4 w-full py-2 bg-brand-cyan text-slate-900 font-bold rounded-xl hover:bg-brand-blue hover:text-white transition-colors text-xs uppercase">Solicitar Substituto</button>`
+                        : `<button onclick="abrirVaga(${item.id})" class="mt-4 w-full py-2 bg-brand-cyan text-slate-900 font-bold rounded-xl hover:bg-brand-blue hover:text-white transition-colors text-xs uppercase">Ver detalhes</button>`;
+                    listElem.innerHTML += `
+                        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-bold px-2.5 py-1 bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded-full">
+                                        <i class="fa-solid fa-clock mr-1"></i> ${esc(dataBR(item.dataVaga))} · ${esc(item.horaInicio)}
+                                    </span>
+                                    <span class="text-xs font-bold text-amber-500">
+                                        <i class="fa-solid fa-hourglass-half"></i> ${esc(item.duracaoHoras)}h
+                                    </span>
+                                </div>
+                                <h4 class="font-bold text-slate-800 dark:text-white text-lg">${esc(item.titulo)}</h4>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1"><i class="fa-solid fa-location-dot mr-1"></i> ${esc(item.endereco || 'Local a combinar')}</p>
+                                <p class="text-sm font-semibold text-brand-blue dark:text-brand-cyan mt-2">${brl(item.valorHora)}/h · total ${brl(item.valorTotal)}</p>
+                            </div>
+                            ${botao}
+                        </div>
+                    `;
+                });
+            }
+
+            section.classList.remove('hidden');
+            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function clearSearchFilter() {
+            document.getElementById('searchResultsSection').classList.add('hidden');
+            document.getElementById('searchInput').value = '';
+        }
+
+        // GERENCIADOR DE MODAIS
+        function openAuthModal(mode) {
+            switchAuthTab(mode);
+            document.getElementById('authModal').classList.remove('hidden');
+        }
+
+        function switchAuthTab(mode) {
+            const tabLogin = document.getElementById('tabLogin');
+            const tabRegister = document.getElementById('tabRegister');
+            const formLogin = document.getElementById('formLogin');
+            const formRegister = document.getElementById('formRegister');
+
+            if (mode === 'login') {
+                tabLogin.className = "flex-1 py-3 font-bold text-center border-b-2 border-brand-blue dark:border-brand-cyan text-brand-blue dark:text-brand-cyan";
+                tabRegister.className = "flex-1 py-3 font-bold text-center border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200";
+                formLogin.classList.remove('hidden');
+                formRegister.classList.add('hidden');
+            } else {
+                tabRegister.className = "flex-1 py-3 font-bold text-center border-b-2 border-brand-blue dark:border-brand-cyan text-brand-blue dark:text-brand-cyan";
+                tabLogin.className = "flex-1 py-3 font-bold text-center border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200";
+                formRegister.classList.remove('hidden');
+                formLogin.classList.add('hidden');
+            }
+        }
+
+        function openDetailModal(type) {
+            const modalContent = document.getElementById('detailModalContent');
+
+            if (type === 'empresas') {
+                modalContent.innerHTML = `
+                    <div class="text-brand-blue dark:text-brand-cyan text-4xl mb-3"><i class="fa-solid fa-laptop"></i></div>
+                    <h3 class="text-2xl font-bold text-brand-darkBlue dark:text-white mb-3">Para Empresas</h3>
+                    <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-4">
+                        Quando um funcionário falta sem aviso, a sua empresa enfrenta desorganização imediata. Com a <strong>SubstituiJá</strong>, você resolve isso em minutos:
+                    </p>
+                    <ul class="space-y-2 text-xs text-slate-700 dark:text-slate-300 mb-6">
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> Registro rápido da vaga emergencial em 3 passos</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> Filtro por categoria, função e disponibilidade</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> Pagamento seguro por diária ou hora realizada</li>
+                    </ul>
+                    <button onclick="closeModal('detailModal'); openEmergencyModal();" class="w-full py-3 bg-brand-blue dark:bg-brand-cyan dark:text-slate-900 text-white font-bold rounded-xl hover:bg-brand-darkBlue transition-colors text-sm">
+                        TESTAR AGORA
+                    </button>
+                `;
+            } else if (type === 'substitutos') {
+                modalContent.innerHTML = `
+                    <div class="text-brand-cyan text-4xl mb-3"><i class="fa-solid fa-microphone-lines"></i></div>
+                    <h3 class="text-2xl font-bold text-brand-darkBlue dark:text-white mb-3">Para Profissionais e Substitutos</h3>
+                    <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-4">
+                        Transforme seu tempo livre em renda extra atuando como substituto temporário em sua área de atuação:
+                    </p>
+                    <ul class="space-y-2 text-xs text-slate-700 dark:text-slate-300 mb-6">
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> Acompanhe convites no seu painel</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> Aceite ou recuse vagas com total liberdade</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> Construa uma reputação sólida com avaliações 5 estrelas</li>
+                    </ul>
+                    <button onclick="closeModal('detailModal'); openAuthModal('register');" class="w-full py-3 bg-brand-cyan text-slate-900 font-bold rounded-xl hover:bg-brand-blue hover:text-white transition-colors text-sm">
+                        CADASTRAR MEU PERFIL
+                    </button>
+                `;
+            } else if (type === 'matching') {
+                modalContent.innerHTML = `
+                    <div class="text-indigo-600 dark:text-indigo-400 text-4xl mb-3"><i class="fa-solid fa-car-side"></i></div>
+                    <h3 class="text-2xl font-bold text-brand-darkBlue dark:text-white mb-3">Compatibilidade por Perfil</h3>
+                    <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-4">
+                        A lista prioriza a categoria da vaga, disponibilidade, função, experiência e avaliação. A cidade aparece no perfil para ajudar a empresa a comparar os profissionais; ainda não calculamos distância ou tempo de deslocamento.
+                    </p>
+                    <button onclick="closeModal('detailModal')" class="w-full py-3 bg-slate-100 dark:bg-slate-700 font-bold text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-sm">
+                        ENTENDI
+                    </button>
+                `;
+            } else if (type === 'qualidade') {
+                modalContent.innerHTML = `
+                    <div class="text-amber-500 dark:text-amber-400 text-4xl mb-3"><i class="fa-solid fa-star"></i></div>
+                    <h3 class="text-2xl font-bold text-brand-darkBlue dark:text-white mb-3">Critérios de Qualidade</h3>
+                    <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-4">
+                        Para garantir a segurança de ambas as partes, avaliamos:
+                    </p>
+                    <ul class="space-y-2 text-xs text-slate-700 dark:text-slate-300 mb-6">
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-shield-check text-brand-blue dark:text-brand-cyan"></i> Documentação e histórico checados</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-star text-amber-500"></i> Pontuação mínima mantida pelos profissionais</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-thumbs-up text-green-500"></i> Suporte contínuo da nossa plataforma</li>
+                    </ul>
+                    <button onclick="closeModal('detailModal')" class="w-full py-3 bg-slate-100 dark:bg-slate-700 font-bold text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-sm">
+                        FECHAR
+                    </button>
+                `;
+            }
+
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // ===== SESSÃO / CABEÇALHO =====
+        function atualizarHeader() {
+            const logado = !!sessao;
+            const auth = document.getElementById('authButtons');
+            const user = document.getElementById('userButtons');
+            auth.classList.toggle('hidden', logado);
+            auth.classList.toggle('flex', !logado);
+            user.classList.toggle('hidden', !logado);
+            user.classList.toggle('flex', logado);
+            if (logado) document.getElementById('userName').textContent = sessao.usuario.nome;
+        }
+
+        function sair() {
+            salvarSessao(null);
+            closeModal('painelModal');
+            showToast('Você saiu da conta.');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            atualizarHeader();
+            toggleRegTipo();
+        });
+
+        // ===== AUTENTICAÇÃO =====
+        function toggleRegTipo() {
+            const empresa = document.getElementById('regTipo').value === 'empresa';
+            document.getElementById('regEmpresa').classList.toggle('hidden', !empresa);
+            document.getElementById('regProfissional').classList.toggle('hidden', empresa);
+            document.getElementById('regCnpj').required = empresa;
+            document.getElementById('regCpf').required = !empresa;
+            document.getElementById('regFuncao').required = !empresa;
+            document.getElementById('regCategoria').required = !empresa;
+        }
+
+        async function submitAuth(e, type) {
+            e.preventDefault();
+            const form = e.target;
+            const botao = e.submitter;
+            if (botao) botao.disabled = true;
+            try {
+                let resp;
+                if (type === 'login') {
+                    resp = await api('/auth/login', {
+                        method: 'POST',
+                        body: {
+                            tipo: val('loginTipo'),
+                            email: val('loginEmail'),
+                            senha: document.getElementById('loginSenha').value,
+                        },
+                    });
+                } else {
+                    const base = {
+                        nome: val('regNome'),
+                        email: val('regEmail'),
+                        senha: document.getElementById('regSenha').value,
+                        telefone: val('regTelefone') || null,
+                        cidade: val('regCidade') || null,
+                    };
+                    resp = val('regTipo') === 'empresa'
+                        ? await api('/auth/empresas', { method: 'POST', body: { ...base, cnpj: val('regCnpj') } })
+                        : await api('/auth/profissionais', {
+                            method: 'POST',
+                            body: { ...base, cpf: val('regCpf'), funcao: val('regFuncao'), categoria: val('regCategoria'), anosExperiencia: Number(val('regAnos') || 0) },
+                        });
+                }
+                salvarSessao({ token: resp.token, tipo: resp.usuario.tipo, usuario: resp.usuario });
+                closeModal('authModal');
+                form.reset();
+                toggleRegTipo();
+                showToast(type === 'login' ? 'Login efetuado com sucesso!' : 'Cadastro realizado com sucesso!');
+            } catch (err) {
+                showToast(err.message);
+            } finally {
+                if (botao) botao.disabled = false;
+            }
+        }
+
+        // ===== VAGA EMERGENCIAL =====
+        function openEmergencyModal() {
+            if (!sessao) {
+                showToast('Entre com uma conta de empresa para solicitar um substituto.');
+                openAuthModal('login');
+                return;
+            }
+            if (sessao.tipo !== 'EMPRESA') {
+                showToast('Apenas contas de empresa podem solicitar substitutos.');
+                return;
+            }
+            const hoje = new Date();
+            const iso = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+            const campoData = document.getElementById('emData');
+            if (!campoData.value) campoData.value = iso;
+            document.getElementById('emergencyModal').classList.remove('hidden');
+        }
+
+        async function handleEmergencySubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            const botao = e.submitter;
+            if (botao) botao.disabled = true;
+            try {
+                const vaga = await api('/vagas', {
+                    method: 'POST',
+                    body: {
+                        titulo: val('emCargo'),
+                        dataVaga: val('emData'),
+                        horaInicio: val('emHora'),
+                        duracaoHoras: Number(val('emDuracao')),
+                        valorHora: Number(val('emValor')),
+                        endereco: val('emEndereco'),
+                    },
+                });
+                closeModal('emergencyModal');
+                form.reset();
+                await abrirSelecaoProfissionais(vaga.id);
+            } catch (err) {
+                showToast(err.message);
+            } finally {
+                if (botao) botao.disabled = false;
+            }
+        }
+
+        function solicitarSubstitutos(vagaId) {
+            return abrirSelecaoProfissionais(vagaId);
+        }
+
+        // ===== DETALHE DA VAGA (busca pública) =====
+        function abrirVaga(id) {
+            const v = vagasEmTela.get(id);
+            if (!v) return;
+            const rodape = sessao
+                ? '<p class="text-xs text-slate-500 dark:text-slate-400">As empresas enviam solicitações aos profissionais disponíveis. Acompanhe as suas em “Meu painel”.</p>'
+                : `<button onclick="closeModal('detailModal'); openAuthModal('register');" class="w-full py-3 bg-brand-cyan text-slate-900 font-bold rounded-xl hover:bg-brand-blue hover:text-white transition-colors text-sm">CADASTRAR MEU PERFIL</button>`;
+            document.getElementById('detailModalContent').innerHTML = `
+                <div class="text-brand-blue dark:text-brand-cyan text-4xl mb-3"><i class="fa-solid fa-briefcase"></i></div>
+                <h3 class="text-2xl font-bold text-brand-darkBlue dark:text-white mb-3">${esc(v.titulo)}</h3>
+                <ul class="space-y-2 text-sm text-slate-700 dark:text-slate-300 mb-4">
+                    <li><i class="fa-solid fa-calendar mr-2"></i>${esc(dataBR(v.dataVaga))} às ${esc(v.horaInicio)} (${esc(v.duracaoHoras)}h)</li>
+                    <li><i class="fa-solid fa-location-dot mr-2"></i>${esc(v.endereco || 'Local a combinar')}</li>
+                    <li><i class="fa-solid fa-money-bill mr-2"></i>${brl(v.valorHora)}/h · total ${brl(v.valorTotal)}</li>
+                </ul>
+                ${v.descricao ? `<p class="text-slate-600 dark:text-slate-300 text-sm mb-4">${esc(v.descricao)}</p>` : ''}
+                ${rodape}`;
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        // ===== PAINEL (EMPRESA / PROFISSIONAL) =====
+        const ROTULO = {
+            aberta: 'Aberta', preenchida: 'Preenchida', concluida: 'Concluída', cancelada: 'Cancelada',
+            enviado: 'Aguardando resposta', aceita: 'Aceita', recusada: 'Recusada', expirada: 'Expirada',
+        };
+        const COR = {
+            aberta: 'bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+            preenchida: 'bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+            concluida: 'bg-green-50 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+            cancelada: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+            enviado: 'bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+            aceita: 'bg-green-50 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+            recusada: 'bg-red-50 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+            expirada: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+        };
+        const badge = (s) => `<span class="text-xs font-bold px-2.5 py-1 rounded-full ${COR[s] || ''}">${esc(ROTULO[s] || s)}</span>`;
+        const btn = (texto, acao, cor = 'bg-brand-blue text-white hover:bg-brand-darkBlue') =>
+            `<button onclick="${acao}" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${cor}">${texto}</button>`;
+        const BTN_NEUTRO = 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600';
+        const BTN_PERIGO = 'bg-red-600 text-white hover:bg-red-700';
+        const cartao = (conteudo) => `<div class="border border-slate-200 dark:border-slate-700 rounded-2xl p-4 mb-3">${conteudo}</div>`;
+        const estrelas = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
+
+        function abrirPainel() {
+            if (!sessao) { openAuthModal('login'); return; }
+            document.getElementById('painelTitulo').textContent =
+                sessao.tipo === 'EMPRESA' ? 'Painel da empresa' : 'Painel do profissional';
+            document.getElementById('painelModal').classList.remove('hidden');
+            carregarPainel();
+        }
+
+        async function carregarPainel() {
+            const el = document.getElementById('painelConteudo');
+            el.innerHTML = '<p class="text-sm text-slate-500 dark:text-slate-400">Carregando...</p>';
+            try {
+                el.innerHTML = sessao.tipo === 'EMPRESA' ? await htmlPainelEmpresa() : await htmlPainelProfissional();
+            } catch (err) {
+                el.innerHTML = `<p class="text-sm text-red-500">${esc(err.message)}</p>`;
+            }
+        }
+
+        async function executar(fn, mensagemOk) {
+            try {
+                await fn();
+                showToast(mensagemOk);
+            } catch (err) {
+                showToast(err.message);
+            }
+            carregarPainel();
+        }
+
+        function formAvaliacao(vagaId, nomeAlvo) {
+            return `<div id="aval-${vagaId}" class="mt-3">
+                <p class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Avalie ${esc(nomeAlvo)}</p>
+                ${btn('Avaliar serviço', `mostrarFormAvaliacao(${vagaId})`)}
+            </div>`;
+        }
+
+        function mostrarFormAvaliacao(vagaId) {
+            const campo = 'px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-white';
+            document.getElementById('aval-' + vagaId).innerHTML = `
+                <div class="flex flex-wrap gap-2 items-center">
+                    <select id="nota-${vagaId}" class="${campo}">
+                        ${[5, 4, 3, 2, 1].map((n) => `<option value="${n}">${estrelas(n)} (${n})</option>`).join('')}
+                    </select>
+                    <input id="coment-${vagaId}" maxlength="500" placeholder="Comentário (opcional)" class="${campo} flex-1 min-w-[10rem]">
+                    ${btn('Enviar', `enviarAvaliacao(${vagaId})`)}
+                </div>`;
+        }
+
+        function enviarAvaliacao(vagaId) {
+            return executar(() => api(`/vagas/${vagaId}/avaliacoes`, {
+                method: 'POST',
+                body: {
+                    nota: Number(document.getElementById('nota-' + vagaId).value),
+                    comentario: document.getElementById('coment-' + vagaId).value,
+                },
+            }), 'Avaliação enviada. Obrigado!');
+        }
+
+        function blocoAvaliacoes(avaliacoes, meuTipo, vagaId, nomeAlvo) {
+            const minha = avaliacoes.find((a) => a.avaliadorTipo === meuTipo);
+            const outra = avaliacoes.find((a) => a.avaliadorTipo !== meuTipo);
+            let html = '';
+            if (minha) html += `<p class="text-xs text-slate-600 dark:text-slate-300 mt-3">Sua avaliação de ${esc(nomeAlvo)}: <span class="text-amber-500">${estrelas(minha.nota)}</span>${minha.comentario ? ' — ' + esc(minha.comentario) : ''}</p>`;
+            else html += formAvaliacao(vagaId, nomeAlvo);
+            if (outra) html += `<p class="text-xs text-slate-600 dark:text-slate-300 mt-2">Avaliação recebida: <span class="text-amber-500">${estrelas(outra.nota)}</span>${outra.comentario ? ' — ' + esc(outra.comentario) : ''}</p>`;
+            return html;
+        }
+
+        // ---- Empresa ----
+        async function htmlPainelEmpresa() {
+            const vagas = await api('/vagas/minhas');
+            if (vagas.length === 0) {
+                return '<p class="text-sm text-slate-500 dark:text-slate-400">Você ainda não publicou vagas. Use “Solicitar Substituto” na página inicial.</p>';
+            }
+            const detalhes = await Promise.all(vagas.map(async (v) => {
+                const [solicitacoes, avaliacoes] = await Promise.all([
+                    api(`/vagas/${v.id}/solicitacoes`),
+                    v.status === 'concluida' ? api(`/vagas/${v.id}/avaliacoes`) : Promise.resolve([]),
+                ]);
+                return { v, solicitacoes, avaliacoes };
+            }));
+
+            return detalhes.map(({ v, solicitacoes, avaliacoes }) => {
+                const contagem = {};
+                solicitacoes.forEach((s) => { contagem[s.status] = (contagem[s.status] || 0) + 1; });
+                const resumo = solicitacoes.length === 0
+                    ? 'Nenhum profissional convidado'
+                    : Object.entries(contagem).map(([st, n]) => `${n} ${(ROTULO[st] || st).toLowerCase()}`).join(' · ');
+                const contratado = solicitacoes.find((s) => s.status === 'aceita')?.profissional;
+                const profissionais = solicitacoes.map((s) => `
+                    <div class="flex flex-wrap items-center justify-between gap-2 py-2 border-t border-slate-100 dark:border-slate-700">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-800 dark:text-white">${esc(s.profissional.nome)} · ${esc(s.profissional.funcao)}</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">
+                                ${esc(s.profissional.anosExperiencia)} ano(s) de experiência${s.profissional.cidade ? ` · ${esc(s.profissional.cidade)}` : ''}
+                                · ★ ${Number(s.profissional.notaMedia || 0).toFixed(1)}
+                            </p>
+                        </div>
+                        ${badge(s.status)}
+                    </div>
+                `).join('');
+
+                let acoes = '';
+                if (v.status === 'aberta') {
+                    acoes = btn('Escolher profissionais', `solicitarSubstitutos(${v.id})`)
+                        + btn('Cancelar vaga', `alterarStatusVaga(${v.id}, 'cancelada')`, BTN_PERIGO);
+                } else if (v.status === 'preenchida') {
+                    acoes = btn('Confirmar trabalho concluído', `alterarStatusVaga(${v.id}, 'concluida')`)
+                        + btn('Cancelar vaga', `alterarStatusVaga(${v.id}, 'cancelada')`, BTN_PERIGO);
+                }
+
+                return cartao(`
+                    <div class="flex items-start justify-between gap-2">
+                        <h4 class="font-bold text-slate-800 dark:text-white">${esc(v.titulo)}</h4>
+                        ${badge(v.status)}
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${esc(dataBR(v.dataVaga))} às ${esc(v.horaInicio)} · ${esc(v.duracaoHoras)}h · ${brl(v.valorTotal)} · ${esc(v.endereco || 'Local a combinar')}</p>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 mt-2">Convites: ${esc(resumo)}</p>
+                    ${solicitacoes.length ? `<div class="mt-3">${profissionais}</div>` : ''}
+                    ${v.status === 'aberta' && solicitacoes.some((s) => s.status === 'enviado')
+                        ? '<p class="text-xs text-amber-600 dark:text-amber-300 mt-2">Aguardando cada profissional responder no próprio painel.</p>' : ''}
+                    ${v.status === 'preenchida'
+                        ? `<p class="text-xs text-green-600 dark:text-green-400 mt-2">Substituição confirmada por ${esc(contratado?.nome || 'um profissional')}. Confirme a conclusão depois do trabalho.</p>` : ''}
+                    ${acoes ? `<div class="flex flex-wrap gap-2 mt-3">${acoes}</div>` : ''}
+                    ${v.status === 'concluida' && contratado
+                        ? `<div class="mt-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50">
+                            <p class="text-sm font-semibold text-slate-800 dark:text-white">Profissional contratado: ${esc(contratado.nome)} · ${esc(contratado.funcao)}</p>
+                            ${blocoAvaliacoes(avaliacoes, 'EMPRESA', v.id, contratado.nome)}
+                        </div>` : ''}
+                `);
+            }).join('');
+        }
+
+        function alterarStatusVaga(id, status) {
+            if (status === 'cancelada' && !confirm('Cancelar esta vaga? As solicitações pendentes expiram.')) return;
+            return executar(
+                () => api(`/vagas/${id}/status`, { method: 'PATCH', body: { status } }),
+                status === 'concluida' ? 'Vaga concluída. Avalie o profissional!' : 'Vaga cancelada.',
+            );
+        }
+
+        // ---- Profissional ----
+        async function htmlPainelProfissional() {
+            const [eu, solicitacoes] = await Promise.all([api('/profissionais/me'), api('/solicitacoes/minhas')]);
+            const emTrabalho = solicitacoes.some((s) => s.status === 'aceita' && s.vaga.status === 'preenchida');
+            const avaliacoesPorVaga = {};
+            await Promise.all(solicitacoes
+                .filter((s) => s.status === 'aceita' && s.vaga.status === 'concluida')
+                .map(async (s) => { avaliacoesPorVaga[s.vagaId] = await api(`/vagas/${s.vagaId}/avaliacoes`); }));
+
+            const topo = cartao(`
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="min-w-[14rem]">
+                        <p class="font-bold text-slate-800 dark:text-white">${esc(eu.nome)} · ${esc(eu.funcao)}</p>
+                        <label for="perfilCategoria" class="block text-xs text-slate-500 dark:text-slate-400 mt-2 mb-1">Sua categoria</label>
+                        <div class="flex flex-wrap gap-2">
+                            <select id="perfilCategoria" class="px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs text-slate-800 dark:text-white">
+                                ${Object.keys(CATEGORIAS).map((categoria) => `<option value="${esc(categoria)}" ${eu.categoria === categoria ? 'selected' : ''}>${esc(categoria)}</option>`).join('')}
+                            </select>
+                            ${btn('Salvar', 'salvarCategoriaProfissional()', BTN_NEUTRO)}
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Nota média: ${eu.notaMedia ? `<span class="text-amber-500 font-bold">★ ${Number(eu.notaMedia).toFixed(1)}</span>` : 'sem avaliações ainda'}</p>
+                    </div>
+                    <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer">
+                        <input type="checkbox" ${eu.disponivel ? 'checked' : ''} ${emTrabalho ? 'disabled' : ''} onchange="alternarDisponibilidade(this.checked)">
+                        ${emTrabalho ? 'Disponibilidade pausada durante a vaga' : 'Disponível para novas solicitações'}
+                    </label>
+                </div>`);
+
+            if (solicitacoes.length === 0) {
+                return topo + '<p class="text-sm text-slate-500 dark:text-slate-400">Nenhuma solicitação recebida por enquanto.</p>';
+            }
+
+            return topo + solicitacoes.map((s) => {
+                const v = s.vaga;
+                let acoes = '';
+                if (s.status === 'enviado' && v.status === 'aberta') {
+                    acoes = `<div class="flex gap-2 mt-3">${btn('Aceitar', `responderSolicitacao(${s.id}, 'aceitar')`, 'bg-green-600 text-white hover:bg-green-700')}${btn('Recusar', `responderSolicitacao(${s.id}, 'recusar')`, BTN_NEUTRO)}</div>`;
+                } else if (s.status === 'aceita' && v.status === 'preenchida') {
+                    acoes = '<p class="text-xs text-green-600 dark:text-green-400 mt-3">Participação confirmada. Sua disponibilidade foi pausada; reative-a quando puder aceitar outro trabalho. A empresa libera a avaliação depois de concluir esta vaga.</p>';
+                } else if (s.status === 'aceita' && v.status === 'concluida') {
+                    acoes = blocoAvaliacoes(avaliacoesPorVaga[s.vagaId] || [], 'PROFISSIONAL', s.vagaId, v.empresaNome || 'empresa');
+                }
+                return cartao(`
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <h4 class="font-bold text-slate-800 dark:text-white">${esc(v.titulo)}</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Convite de ${esc(v.empresaNome || 'empresa')}</p>
+                        </div>
+                        ${badge(s.status)}
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${esc(dataBR(v.dataVaga))} às ${esc(v.horaInicio)} · ${esc(v.duracaoHoras)}h · ${brl(v.valorTotal)} · ${esc(v.endereco || 'Local a combinar')}</p>
+                    ${s.status === 'enviado'
+                        ? '<p class="text-xs text-slate-600 dark:text-slate-300 mt-3">A empresa convidou você para esta substituição. Aceite para confirmar sua participação ou recuse se não puder comparecer.</p>' : ''}
+                    ${acoes}
+                `);
+            }).join('');
+        }
+
+        function responderSolicitacao(id, acao) {
+            return executar(
+                () => api(`/solicitacoes/${id}/${acao}`, { method: 'PATCH' }),
+                acao === 'aceitar' ? 'Vaga confirmada! A empresa foi avisada.' : 'Solicitação recusada.',
+            );
+        }
+
+        function alternarDisponibilidade(disponivel) {
+            return executar(
+                () => api('/profissionais/me', { method: 'PATCH', body: { disponivel } }),
+                disponivel ? 'Você está disponível.' : 'Você ficou indisponível.',
+            );
+        }
+
+        function salvarCategoriaProfissional() {
+            const categoria = document.getElementById('perfilCategoria').value;
+            return executar(
+                () => api('/profissionais/me', { method: 'PATCH', body: { categoria } }),
+                'Categoria profissional atualizada.',
+            );
+        }
+
+
+// SISTEMA DE TOAST NOTIFICATION
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 dark:border-slate-300 text-sm font-medium animate-bounce';
+            toast.innerHTML = `
+                <i class="fa-solid fa-circle-check text-brand-cyan text-lg"></i>
+                <span class="toast-msg"></span>
+            `;
+            toast.querySelector('.toast-msg').textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>

@@ -5,7 +5,22 @@ import { Vaga } from "../dominio/Vaga";
 export interface CandidaturaComVaga {
   candidatura: Candidatura;
   vaga: Vaga;
+  empresaNome: string;
 }
+
+export interface CandidaturaComProfissional {
+  candidatura: Candidatura;
+  profissional: {
+    id: number;
+    nome: string;
+    funcao: string;
+    cidade: string | null;
+    anosExperiencia: number;
+    notaMedia: number | null;
+  };
+}
+
+class AceiteConcorrente extends Error {}
 
 export class CandidaturaDAO {
   async criarVarias(candidaturas: Candidatura[]): Promise<Candidatura[]> {
@@ -30,12 +45,27 @@ export class CandidaturaDAO {
     return registro ? this.mapearParaDominio(registro) : null;
   }
 
-  async listarPorVaga(vagaId: number): Promise<Candidatura[]> {
+  async listarPorVaga(vagaId: number): Promise<CandidaturaComProfissional[]> {
     const registros = await prisma.candidatura.findMany({
       where: { vagaId },
+      include: {
+        profissional: {
+          select: {
+            id: true,
+            nome: true,
+            funcao: true,
+            cidade: true,
+            anosExperiencia: true,
+            notaMedia: true,
+          },
+        },
+      },
       orderBy: { criadoEm: "asc" },
     });
-    return registros.map((registro) => this.mapearParaDominio(registro));
+    return registros.map((registro) => ({
+      candidatura: this.mapearParaDominio(registro),
+      profissional: registro.profissional,
+    }));
   }
 
   async listarPorProfissional(
@@ -44,12 +74,13 @@ export class CandidaturaDAO {
   ): Promise<CandidaturaComVaga[]> {
     const registros = await prisma.candidatura.findMany({
       where: status ? { profissionalId, status } : { profissionalId },
-      include: { vaga: true },
+      include: { vaga: { include: { empresa: { select: { nome: true } } } } },
       orderBy: { criadoEm: "desc" },
     });
 
     return registros.map((registro: any) => ({
       candidatura: this.mapearParaDominio(registro),
+      empresaNome: registro.vaga.empresa.nome,
       vaga: new Vaga(
         registro.vaga.empresaId,
         registro.vaga.titulo,
@@ -73,51 +104,72 @@ export class CandidaturaDAO {
     return registro ? this.mapearParaDominio(registro) : null;
   }
 
-  async atualizar(candidatura: Candidatura): Promise<Candidatura> {
+  async recusarSePendente(candidatura: Candidatura): Promise<Candidatura | null> {
     if (candidatura.id == null) {
       throw new Error("Candidatura deve ter um ID para ser atualizada.");
     }
 
-    const registro = await prisma.candidatura.update({
-      where: { id: candidatura.id },
+    const resposta = await prisma.candidatura.updateMany({
+      where: { id: candidatura.id, status: "enviado" },
       data: {
         status: candidatura.status,
         dataResposta: candidatura.dataResposta,
       },
     });
+    if (resposta.count !== 1) return null;
+
+    const registro = await prisma.candidatura.findUniqueOrThrow({
+      where: { id: candidatura.id },
+    });
     return this.mapearParaDominio(registro);
   }
 
-  async confirmarAceite(candidatura: Candidatura): Promise<Candidatura> {
+  async confirmarAceite(candidatura: Candidatura): Promise<Candidatura | null> {
     if (candidatura.id == null) {
       throw new Error("Candidatura deve ter um ID para ser atualizada.");
     }
 
-    const [registro] = await prisma.$transaction([
-      prisma.candidatura.update({
-        where: { id: candidatura.id },
-        data: {
-          status: candidatura.status,
-          dataResposta: candidatura.dataResposta,
-        },
-      }),
-      prisma.candidatura.updateMany({
-        where: {
-          vagaId: candidatura.vagaId,
-          id: { not: candidatura.id },
-          status: "enviado",
-        },
-        data: { status: "expirada" },
-      }),
-    ]);
-    return this.mapearParaDominio(registro);
-  }
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const resposta = await tx.candidatura.updateMany({
+          where: { id: candidatura.id, status: "enviado" },
+          data: {
+            status: candidatura.status,
+            dataResposta: candidatura.dataResposta,
+          },
+        });
+        if (resposta.count !== 1) throw new AceiteConcorrente();
 
-  async expirarPendentesDaVaga(vagaId: number): Promise<void> {
-    await prisma.candidatura.updateMany({
-      where: { vagaId, status: "enviado" },
-      data: { status: "expirada" },
-    });
+        const vagaPreenchida = await tx.vaga.updateMany({
+          where: { id: candidatura.vagaId, status: "aberta" },
+          data: { status: "preenchida" },
+        });
+        if (vagaPreenchida.count !== 1) throw new AceiteConcorrente();
+
+        const profissionalReservado = await tx.profissional.updateMany({
+          where: { id: candidatura.profissionalId, disponivel: true },
+          data: { disponivel: false },
+        });
+        if (profissionalReservado.count !== 1) throw new AceiteConcorrente();
+
+        await tx.candidatura.updateMany({
+          where: {
+            vagaId: candidatura.vagaId,
+            id: { not: candidatura.id },
+            status: "enviado",
+          },
+          data: { status: "expirada" },
+        });
+
+        const registro = await tx.candidatura.findUniqueOrThrow({
+          where: { id: candidatura.id },
+        });
+        return this.mapearParaDominio(registro);
+      });
+    } catch (erro) {
+      if (erro instanceof AceiteConcorrente) return null;
+      throw erro;
+    }
   }
 
   private mapearParaDominio(registro: any): Candidatura {

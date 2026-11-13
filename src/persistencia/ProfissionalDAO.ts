@@ -12,6 +12,7 @@ export class ProfissionalDAO {
         telefone: profissional.telefone,
         cidade: profissional.cidade,
         funcao: profissional.funcao,
+        categoria: profissional.categoria,
         anosExperiencia: profissional.anosExperiencia,
         notaMedia: profissional.notaMedia,
         disponivel: profissional.disponivel,
@@ -56,6 +57,7 @@ export class ProfissionalDAO {
         telefone: profissional.telefone,
         cidade: profissional.cidade,
         funcao: profissional.funcao,
+        categoria: profissional.categoria,
         anosExperiencia: profissional.anosExperiencia,
         notaMedia: profissional.notaMedia,
         disponivel: profissional.disponivel,
@@ -88,6 +90,7 @@ export class ProfissionalDAO {
       registro.disponivel,
       registro.id,
       registro.criadoEm,
+      registro.categoria,
     );
   }
 }

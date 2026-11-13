@@ -2,12 +2,14 @@
   "type": "module",
   "name": "projeto_substitutos",
   "version": "1.0.0",
-  "description": "Domínio e persistência da plataforma SubstituiJá",
+  "description": "API Express da plataforma SubstituiJá",
   "private": true,
   "engines": {
     "node": ">=20.19"
   },
   "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
@@ -28,12 +30,15 @@
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.6.6",
     "prisma": "^7.10.1",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "@types/express": "^5.0.3",
+    "tsx": "^4.20.6"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "better-sqlite3": "^13.0.3",
-    "dotenv": "^18.0.9"
+    "dotenv": "^18.0.9",
+    "express": "^5.1.0"
   }
 }
