@@ -109,8 +109,8 @@ Authorization: Bearer <token>
 `public/index.html` usa `fetch` nas rotas acima. O token fica em `localStorage`.
 
 - **Busca e categorias:** a busca pública lista vagas via `GET /api/vagas`; para empresas autenticadas, os cartões filtram profissionais disponíveis por categoria via `GET /api/profissionais?categoria=`. Profissionais escolhem a categoria no cadastro e podem alterá-la no painel; perfis antigos sem categoria continuam usando a função como sugestão.
-- **Cadastro e login:** o formulário muda conforme o perfil (CNPJ para empresa; CPF, função e experiência para profissional).
-- **Solicitar Substituto:** exige conta de empresa; publica a vaga e permite escolher um ou mais profissionais disponíveis. Também é possível convidar um profissional pela categoria.
+- **Cadastro e login:** o formulário muda conforme o perfil (CNPJ para empresa; CPF, categoria, função e experiência para profissional).
+- **Solicitar Substituto:** exige conta de empresa; publica a vaga com categoria e permite convidar automaticamente até três profissionais disponíveis daquela categoria ou escolher pessoas manualmente. Profissionais veem a categoria no próprio painel e em cada convite recebido.
 - **Meu painel (empresa):** acompanha o nome e o estado de cada convite. Quando um profissional aceita, a vaga fica preenchida e a empresa vê a confirmação. Depois do trabalho, a empresa conclui a vaga e pode avaliar especificamente o profissional contratado; a nota média dele é atualizada junto da avaliação.
 - **Meu painel (profissional):** mostra os dados do convite, incluindo a empresa, e permite aceitar para confirmar a participação ou recusar. Ao aceitar, sua disponibilidade é pausada enquanto a vaga estiver em andamento e volta ao ser concluída ou cancelada. Convites são recebidos no painel; não há envio real de e-mail/notificação externa.
 - **Avaliações:** após a empresa concluir uma vaga preenchida, empresa e profissional podem deixar uma nota de 1 a 5 e comentário opcional. Cada parte pode avaliar uma vez por vaga.

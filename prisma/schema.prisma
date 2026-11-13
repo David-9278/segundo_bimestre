@@ -47,6 +47,7 @@ model Vaga {
   empresaId    Int      @map("empresa_id")
   empresa      Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   titulo       String
+  categoria    String?
   descricao    String?
   dataVaga     DateTime @map("data_vaga")
   horaInicio   String   @map("hora_inicio")

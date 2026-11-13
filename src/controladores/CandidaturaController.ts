@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { Candidatura } from "../dominio/Candidatura";
-import { inferirCategoria, Profissional } from "../dominio/Profissional";
+import { Profissional } from "../dominio/Profissional";
 import { usuarioDa } from "../middlewares/autenticacao";
 import { CandidaturaDAO } from "../persistencia/CandidaturaDAO";
 import { ProfissionalDAO } from "../persistencia/ProfissionalDAO";
@@ -56,10 +56,13 @@ export class CandidaturaController {
       }
     } else {
       const titulo = normalizar(vaga.titulo);
-      const categoriaVaga = inferirCategoria(vaga.titulo);
+      const categoriaVaga = vaga.categoria;
       escolhidos = (await profissionalDAO.listarDisponiveis())
         .filter((p) => {
           const funcao = normalizar(p.funcao);
+          if (vaga.categoriaSalva !== null) {
+            return normalizar(p.categoria) === normalizar(categoriaVaga);
+          }
           return (
             (categoriaVaga !== "Outro" && p.categoria === categoriaVaga) ||
             funcao.includes(titulo) ||

@@ -1,3 +1,5 @@
+import { CATEGORIAS_PROFISSIONAL, inferirCategoria, type CategoriaProfissional } from "./Profissional";
+
 export const STATUS_VAGA = [
   "aberta",
   "preenchida",
@@ -17,6 +19,7 @@ export class Vaga {
   private _id?: number;
   private _empresaId!: number;
   private _titulo!: string;
+  private _categoria?: CategoriaProfissional;
   private _descricao: string | null = null;
   private _dataVaga!: Date;
   private _horaInicio!: string;
@@ -38,9 +41,11 @@ export class Vaga {
     status: string = "aberta",
     id?: number,
     criadoEm?: Date,
+    categoria?: string | null,
   ) {
     this.setEmpresaId(empresaId);
     this.setTitulo(titulo);
+    this.setCategoria(categoria);
     this.setDataVaga(dataVaga);
     this.setHoraInicio(horaInicio);
     this.setDuracaoHoras(duracaoHoras);
@@ -60,6 +65,12 @@ export class Vaga {
   }
   get titulo() {
     return this._titulo;
+  }
+  get categoria() {
+    return this._categoria ?? inferirCategoria(this._titulo);
+  }
+  get categoriaSalva() {
+    return this._categoria ?? null;
   }
   get descricao() {
     return this._descricao;
@@ -100,6 +111,21 @@ export class Vaga {
       );
     }
     this._titulo = titulo.trim();
+  }
+
+  setCategoria(categoria?: string | null) {
+    if (categoria == null) {
+      this._categoria = undefined;
+      return;
+    }
+    const normalizada = String(categoria).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const valor = CATEGORIAS_PROFISSIONAL.find((item) =>
+      item.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === normalizada
+    );
+    if (!valor) {
+      throw new Error(`Categoria inválida. Opções: ${CATEGORIAS_PROFISSIONAL.join(", ")}`);
+    }
+    this._categoria = valor;
   }
 
   setDescricao(descricao?: string | null) {
@@ -178,6 +204,7 @@ export class Vaga {
       id: this._id,
       empresaId: this._empresaId,
       titulo: this._titulo,
+      categoria: this.categoria,
       descricao: this._descricao,
       dataVaga: this._dataVaga,
       horaInicio: this._horaInicio,

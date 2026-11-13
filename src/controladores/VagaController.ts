@@ -34,7 +34,7 @@ export class VagaController {
   }
 
   async criar(req: Request, res: Response) {
-    const { titulo, descricao, dataVaga, horaInicio, duracaoHoras, valorHora, endereco } =
+    const { titulo, categoria, descricao, dataVaga, horaInicio, duracaoHoras, valorHora, endereco } =
       req.body ?? {};
 
     const vaga = new Vaga(
@@ -46,6 +46,10 @@ export class VagaController {
       Number(valorHora),
       descricao,
       endereco,
+      "aberta",
+      undefined,
+      undefined,
+      categoria,
     );
     vaga.validarDataNaoPassada();
 
@@ -58,9 +62,10 @@ export class VagaController {
       throw new ErroHttp(409, "Só é possível editar vagas abertas");
     }
 
-    const { titulo, descricao, dataVaga, horaInicio, duracaoHoras, valorHora, endereco } =
+    const { titulo, categoria, descricao, dataVaga, horaInicio, duracaoHoras, valorHora, endereco } =
       req.body ?? {};
     if (titulo !== undefined) vaga.setTitulo(titulo);
+    if (categoria !== undefined) vaga.setCategoria(categoria);
     if (descricao !== undefined) vaga.setDescricao(descricao);
     if (dataVaga !== undefined) {
       vaga.setDataVaga(new Date(dataVaga));

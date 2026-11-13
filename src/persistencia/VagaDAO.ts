@@ -7,6 +7,7 @@ export class VagaDAO {
       data: {
         empresaId: vaga.empresaId,
         titulo: vaga.titulo,
+        categoria: vaga.categoriaSalva,
         descricao: vaga.descricao,
         dataVaga: vaga.dataVaga,
         horaInicio: vaga.horaInicio,
@@ -72,6 +73,7 @@ export class VagaDAO {
       where: { id: vaga.id },
       data: {
         titulo: vaga.titulo,
+        categoria: vaga.categoriaSalva,
         descricao: vaga.descricao,
         dataVaga: vaga.dataVaga,
         horaInicio: vaga.horaInicio,
@@ -140,6 +142,7 @@ export class VagaDAO {
       registro.status,
       registro.id,
       registro.criadoEm,
+      registro.categoria,
     );
   }
 }
