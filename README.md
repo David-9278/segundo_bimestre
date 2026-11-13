@@ -43,7 +43,7 @@ JWT_SECRET="troque-por-um-segredo-longo-e-aleatorio"
 
 As migrações estão versionadas em `prisma/migrations`. O cliente Prisma é
 gerado localmente em `generated/prisma` e não precisa ser enviado ao GitHub.
-Se o schema mudar, crie uma nova migração com:
+Se o schema mudar, crie uma nova migração com :
 
 ```bash
 npx prisma migrate dev --name nome_da_migracao
